@@ -1,0 +1,7 @@
+build/
+dist/
+freeglut-3.0.0/
+glew-1.13.0/
+hierarchy.txt
+include/
+lib/

@@ -1,7 +1,10 @@
 build/
 dist/
-freeglut-3.0.0/
-glew-1.13.0/
+glfw/
+glew/
+freetype2/
+win/
 hierarchy.txt
+texture_sources.txt
 include/
 lib/

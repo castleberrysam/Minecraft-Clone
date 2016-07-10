@@ -1,40 +1,145 @@
 #ifndef VECTOR_H
 #define VECTOR_H
 
+#include <stdint.h>
+#include <stdbool.h>
+
 typedef struct {
-  int x;
-  int y;
-} vectori2;
+  int64_t x;
+  int64_t y;
+} Vector2i;
 
 typedef struct {
   double x;
   double y;
-} vectord2;
+} Vector2d;
 
 typedef struct {
-  int x;
-  int y;
-  int z;
-} vectori3;
+  int64_t x;
+  int64_t y;
+  int64_t z;
+} Vector3i;
 
 typedef struct {
   double x;
   double y;
   double z;
-} vectord3;
+} Vector3d;
 
 typedef struct {
-  int x;
-  int y;
-  int z;
-  int w;
-} vectori4;
+  int64_t x;
+  int64_t y;
+  int64_t z;
+  int64_t w;
+} Vector4i;
 
 typedef struct {
   double x;
   double y;
   double z;
   double w;
-} vectord4;
+} Vector4d;
+
+inline void vec_set3i(Vector3i *out, int64_t x, int64_t y, int64_t z);
+inline void vec_set3d(Vector3d *out, double x, double y, double z);
+inline void vec_add3i(Vector3i *out, Vector3i *left, Vector3i *right);
+inline void vec_add3d(Vector3d *out, Vector3d *left, Vector3d *right);
+inline void vec_scale3i(Vector3i *out, Vector3i *vec, int64_t scale);
+inline void vec_div3i(Vector3i *out, Vector3i *vec, int64_t divisor);
+inline void vec_mod3i(Vector3i *out, Vector3i *vec, int64_t divisor);
+inline void vec_scale3d(Vector3d *out, Vector3d *vec, double scale);
+inline void vec_copy3i(Vector3i *new, Vector3i *old);
+inline void vec_copy3d(Vector3d *new, Vector3d *old);
+inline bool vec_equal3i(Vector3i *left, Vector3i *right);
+inline bool vec_equal3d(Vector3d *left, Vector3d *right);
+
+inline void vec_set3i(Vector3i *out, int64_t x, int64_t y, int64_t z)
+{
+  out->x = x;
+  out->y = y;
+  out->z = z;
+}
+
+inline void vec_set3d(Vector3d *out, double x, double y, double z)
+{
+  out->x = x;
+  out->y = y;
+  out->z = z;
+}
+
+inline void vec_add3i(Vector3i *out, Vector3i *left, Vector3i *right)
+{
+  out->x = left->x + right->x;
+  out->y = left->y + right->y;
+  out->z = left->z + right->z;
+}
+
+inline void vec_add3d(Vector3d *out, Vector3d *left, Vector3d *right)
+{
+  out->x = left->x + right->x;
+  out->y = left->y + right->y;
+  out->z = left->z + right->z;
+}
+
+inline void vec_scale3i(Vector3i *out, Vector3i *vec, int64_t scale)
+{
+  out->x = vec->x * scale;
+  out->y = vec->y * scale;
+  out->z = vec->z * scale;
+}
+
+inline void vec_scale3d(Vector3d *out, Vector3d *vec, double scale)
+{
+  out->x = vec->x * scale;
+  out->y = vec->y * scale;
+  out->z = vec->z * scale;
+}
+
+inline void vec_div3i(Vector3i *out, Vector3i *vec, int64_t divisor)
+{
+  out->x = vec->x / divisor;
+  out->y = vec->y / divisor;
+  out->z = vec->z / divisor;
+}
+
+inline void vec_mod3i(Vector3i *out, Vector3i *vec, int64_t divisor)
+{
+  out->x = vec->x % divisor;
+  out->y = vec->y % divisor;
+  out->z = vec->z % divisor;
+  if(out->x < 0) {out->x += divisor;}
+  if(out->y < 0) {out->y += divisor;}
+  if(out->z < 0) {out->z += divisor;}
+}
+
+inline void vec_copy3i(Vector3i *new, Vector3i *old)
+{
+  new->x = old->x;
+  new->y = old->y;
+  new->z = old->z;
+}
+
+inline void vec_copy3d(Vector3d *new, Vector3d *old)
+{
+  new->x = old->x;
+  new->y = old->y;
+  new->z = old->z;
+}
+
+inline bool vec_equal3i(Vector3i *left, Vector3i *right)
+{
+  if(left->x != right->x) {return false;}
+  if(left->y != right->y) {return false;}
+  if(left->z != right->z) {return false;}
+  return true;
+}
+
+inline bool vec_equal3d(Vector3d *left, Vector3d *right)
+{
+  if(left->x != right->x) {return false;}
+  if(left->y != right->y) {return false;}
+  if(left->z != right->z) {return false;}
+  return true;
+}
 
 #endif /* VECTOR_H */

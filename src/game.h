@@ -1,19 +1,15 @@
 #ifndef GAME_H
 #define GAME_H
 
-#include "module.h"
 #include "world.h"
-#include "action.h"
+#include <stdbool.h>
 
 typedef struct {
-  int num_loaded;
-  module *loaded_mods;
-  int num_unloaded;
-  module *unloaded_mods;
-  int num_worlds;
-  world *worlds;
-  int num_actions;
-  action *actions;
-} game;
+  World **worlds;
+} Game;
+
+void game_init(Game *game);
+bool game_alloc_worlds(Game *game, int num);
+bool game_del_world(Game *game, World *world);
 
 #endif /* GAME_H */

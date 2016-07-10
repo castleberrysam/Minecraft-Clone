@@ -3,13 +3,17 @@
 
 #include "entity.h"
 #include "inventory.h"
+#include <stdint.h>
 
 typedef struct {
-  entity *entity;
-  inventory *inventory;
-  int health;
+  Entity entity;
+  Inventory *inv;
+  uint32_t hp;
   double speed;
   double jump_height;
-} player;
+} Player;
+
+void player_init(Player *player);
+void player_delete(Player *player);
 
 #endif /* PLAYER_H */

@@ -2,10 +2,11 @@
 #define ITEM_H
 
 #include "block.h"
+#include <stdint.h>
 
 typedef struct {
-  int quantity;
-  block *block;
-} item;
+  uint32_t quantity;
+  Block *block;
+} Item;
 
 #endif /* ITEM_H */

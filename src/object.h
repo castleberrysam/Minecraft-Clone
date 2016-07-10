@@ -4,11 +4,12 @@
 #include "vector.h"
 
 typedef struct {
-  vectord3 pos;
-  vectord3 vel;
-  vectord3 bb_dims;
-  vectord3 bb_offset;
+  Vector3d rot;
+  Vector3d pos;
+  Vector3d vel;
+  Vector3d bb_dims;
+  Vector3d bb_offset;
   double mass;
-} object;
+} Object;
 
 #endif /* OBJECT_H */

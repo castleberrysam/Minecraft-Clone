@@ -4,8 +4,10 @@
 #include "item.h"
 
 typedef struct {
-  int num_items;
-  item *items;
-} inventory;
+  Item **items;
+} Inventory;
+
+void inv_init(Inventory *inv, uint64_t size);
+void inv_delete(Inventory *inv);
 
 #endif /* INVENTORY_H */

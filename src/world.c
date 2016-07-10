@@ -298,6 +298,41 @@ Block * world_block_get3d(World *world, Vector3d *pos)
   return world_block_get3i(world, &tmp);
 }
 
+void world_block_set3i(World *world, Vector3i *pos, Block *block)
+{
+  Vector3i tmp;
+  vec_copy3i(&tmp, pos);
+  if(pos->x < 0) {++tmp.x;}
+  if(pos->y < 0) {++tmp.y;}
+  if(pos->z < 0) {++tmp.z;}
+  vec_div3i(&tmp, &tmp, 16);
+  if(pos->x < 0) {--tmp.x;}
+  if(pos->y < 0) {--tmp.y;}
+  if(pos->z < 0) {--tmp.z;}
+  
+  int i = 0;
+ postgen: ;
+  Chunk *chunk = world->chunks[i];
+  while(chunk != NULL) {
+    if(vec_equal3i(&chunk->pos, &tmp)) {
+      vec_mod3i(&tmp, pos, 16);
+      chunk_block_set(chunk, &tmp, block);
+      return;
+    }
+    chunk = world->chunks[++i];
+  }
+  
+  world_chunk_gen3i(world, &tmp, 0);
+  goto postgen;
+}
+
+void world_block_set3d(World *world, Vector3d *pos, Block *block)
+{
+  Vector3i tmp;
+  vec_set3i(&tmp, (int64_t) floor(pos->x), (int64_t) floor(pos->y), (int64_t) floor(pos->z));
+  return world_block_set3i(world, &tmp, block);
+}
+
 void world_block_delete3i(World *world, Vector3i *pos)
 {
   Vector3i tmp;

@@ -31,5 +31,7 @@ void block_copy(Block *new, Block *old)
 
 bool block_equal(Block *left, Block *right)
 {
+  if(left == NULL) {return right == NULL;}
+  if(right == NULL) {return false;}
   return strcmp(left->str_id, right->str_id) == 0;
 }

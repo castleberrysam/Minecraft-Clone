@@ -27,6 +27,8 @@ bool world_add_mapping(World *world, Block *mapping);
 bool world_delete_mapping(World *world, Block *mapping);
 Block * world_block_get3i(World *world, Vector3i *pos);
 Block * world_block_get3d(World *world, Vector3d *pos);
+void world_block_set3i(World *world, Vector3i *pos, Block *block);
+void world_block_set3d(World *world, Vector3d *pos, Block *block);
 void world_block_delete3i(World *world, Vector3i *pos);
 void world_block_delete3d(World *world, Vector3d *pos);
 void world_draw(World *world);

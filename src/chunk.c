@@ -23,6 +23,13 @@ inline Block * chunk_block_get(Chunk *chunk, Vector3i *pos)
   return chunk->blocks[index];
 }
 
+void chunk_block_set(Chunk *chunk, Vector3i *pos, Block *block)
+{
+  int index = pos->x+(pos->y*16)+(pos->z*256);
+  chunk->changed = !block_equal(chunk->blocks[index], block);
+  chunk->blocks[index] = block;
+}
+
 void chunk_block_delete(Chunk *chunk, Vector3i *pos)
 {
   int index = pos->x+(pos->y*16)+(pos->z*256);

@@ -4,13 +4,8 @@
 #include <float.h>
 #include "physics.h"
 
-static const double PHYS_TOL = 0.000000001;
-
-#define MAX(a, b) ((a) > (b) ? (a) : (b))
-#define MIN(a, b) ((a) < (b) ? (a) : (b))
-
-static const double PI = 3.14159265;
-#define RADS(angle) (((angle) * PI) / 180.0)
+const double PI = 3.14159265;
+const double PHYS_TOL = 0.000000001;
 
 static double phys_time_target(double pos, double vel)
 {
@@ -426,9 +421,6 @@ bool phys_is_grounded(World *world, Entity *entity)
 {
   if(entity->vel.y != 0.0) {return false;}
   
-  double bottom = entity->pos.y + entity->bb_off.y - entity->bb_dim.y;
-  if(abs(floor(bottom) - bottom) > PHYS_TOL) {return false;}
-
   Vector3d pos, tmp;
   vec_copy3d(&pos, &entity->pos);
   vec_add3d(&pos, &pos, &entity->bb_off);
@@ -448,4 +440,18 @@ bool phys_is_grounded(World *world, Entity *entity)
     }
   }
   return false;
+}
+
+bool phys_aabb_intersect(Vector3d *pos1, Vector3d *dim1, Vector3d *pos2, Vector3d *dim2)
+{
+  Vector3d tmp, max1, min1, max2, min2;
+  vec_add3d(&max1, pos1, dim1);
+  vec_scale3d(&tmp, dim1, -1.0);
+  vec_add3d(&min1, pos1, &tmp);
+  vec_add3d(&max2, pos2, dim2);
+  vec_scale3d(&tmp, dim2, -1.0);
+  vec_add3d(&min2, pos2, &tmp);
+
+  return max1.x > min2.x && max1.y > min2.y && max1.z > min2.z &&
+    min1.x < max2.x && min1.y < max2.y && min1.z < max2.z;
 }

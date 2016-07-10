@@ -11,12 +11,6 @@
 #include "texture.h"
 #include "font.h"
 
-static const double PI = 3.14159265;
-#define RADS(angle) (((angle) * PI) / 180.0)
-
-#define MAX(a, b) ((a) > (b) ? (a) : (b))
-#define MIN(a, b) ((a) < (b) ? (a) : (b))
-
 static const double MOUSE_SENS = 0.1;
 static double lastx = 0.0;
 static double lasty = 0.0;
@@ -30,6 +24,14 @@ static int fps = 0;
 
 static bool selecting = false;
 static Vector3d trace;
+static enum {
+  NORTH,
+  EAST,
+  SOUTH,
+  WEST,
+  TOP,
+  BOTTOM
+} side;
 
 static void error(int error, const char *description)
 {
@@ -55,33 +57,6 @@ static void display(GLFWwindow *window)
   glTranslated(-player->pos.x, -player->pos.y-0.5, -player->pos.z);
   
   world_draw(world);
-
-  if(selecting) {
-    glTranslated(floor(trace.x), floor(trace.y), floor(trace.z));
-    glDisable(GL_TEXTURE_2D);
-    glColor4d(0.0, 0.0, 1.0, 1.0);
-    glLineWidth(10.0);
-    glBegin(GL_LINE_LOOP);
-    glVertex3d(0.0, 0.0, 0.0);
-    glVertex3d(0.0, 0.0, 1.0);
-    glVertex3d(0.0, 1.0, 1.0);
-    glVertex3d(0.0, 1.0, 0.0);
-    glVertex3d(1.0, 1.0, 0.0);
-    glVertex3d(1.0, 1.0, 1.0);
-    glVertex3d(1.0, 0.0, 1.0);
-    glVertex3d(1.0, 0.0, 0.0);
-    glEnd();
-    glBegin(GL_LINES);
-    glVertex3d(0.0, 1.0, 1.0);
-    glVertex3d(1.0, 1.0, 1.0);
-    glVertex3d(0.0, 0.0, 1.0);
-    glVertex3d(1.0, 0.0, 1.0);
-    glVertex3d(0.0, 0.0, 0.0);
-    glVertex3d(0.0, 1.0, 0.0);
-    glVertex3d(1.0, 0.0, 0.0);
-    glVertex3d(1.0, 1.0, 0.0);
-    glEnd();
-  }
   
   glMatrixMode(GL_PROJECTION);
   glPushMatrix();
@@ -97,6 +72,15 @@ static void display(GLFWwindow *window)
   char tmp[64];
   snprintf(tmp, 64, "FPS: %d", fps);
   font_draw_text(font, tmp);
+
+  glLoadIdentity();
+  glTranslated(width/2, height/2, 0.0);
+  glPointSize(10.0);
+  glDisable(GL_TEXTURE_2D);
+  glColor4d(1.0, 1.0, 1.0, 1.0);
+  glBegin(GL_POINTS);
+  glVertex2d(0.0, 0.0);
+  glEnd();
 
   glMatrixMode(GL_PROJECTION);
   glPopMatrix();
@@ -132,8 +116,38 @@ static void mouse(GLFWwindow *window, double x, double y)
 static void click(GLFWwindow *window, int button, int action, int modifiers)
 {
   Game *game = glfwGetWindowUserPointer(window);
-  if(selecting && button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS) {
+  if(!selecting) {return;}
+  if(button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS) {
     world_block_delete3d(game->worlds[0], &trace);
+  } else if(button == GLFW_MOUSE_BUTTON_RIGHT && action == GLFW_PRESS) {
+    Vector3d tmp;
+    switch(side) {
+    case NORTH:
+      vec_set3d(&tmp, floor(trace.x)+0.5, floor(trace.y)+0.5, floor(trace.z)-0.5);
+      break;
+    case EAST:
+      vec_set3d(&tmp, floor(trace.x)+1.5, floor(trace.y)+0.5, floor(trace.z)+0.5);
+      break;
+    case SOUTH:
+      vec_set3d(&tmp, floor(trace.x)+0.5, floor(trace.y)+0.5, floor(trace.z)+1.5);
+      break;
+    case WEST:
+      vec_set3d(&tmp, floor(trace.x)-0.5, floor(trace.y)+0.5, floor(trace.z)+0.5);
+      break;
+    case TOP:
+      vec_set3d(&tmp, floor(trace.x)+0.5, floor(trace.y)+1.5, floor(trace.z)+0.5);
+      break;
+    case BOTTOM:
+      vec_set3d(&tmp, floor(trace.x)+0.5, floor(trace.y)-0.5, floor(trace.z)+0.5);
+      break;
+    }
+    Entity *player = game->worlds[0]->entities[0];
+    Vector3d pos1, dim2;
+    vec_add3d(&pos1, &player->pos, &player->bb_off);
+    vec_set3d(&dim2, 0.5, 0.5, 0.5);
+    if(!phys_aabb_intersect(&pos1, &player->bb_dim, &tmp, &dim2)) {
+      world_block_set3d(game->worlds[0], &tmp, game->worlds[0]->mappings[0]);
+    }
   }
 }
 
@@ -314,6 +328,19 @@ int main(void)
     glfwPollEvents();
 
     selecting = phys_trace(world, player, 5.0, &trace);
+    if(ABS(trace.x - ceil(trace.x)) <= PHYS_TOL*1.1) {
+      side = EAST;
+    } else if(ABS(trace.x - floor(trace.x)) <= PHYS_TOL*1.1) {
+      side = WEST;
+    } else if(ABS(trace.y - ceil(trace.y)) <= PHYS_TOL*1.1) {
+      side = TOP;
+    } else if(ABS(trace.y - floor(trace.y)) <= PHYS_TOL*1.1) {
+      side = BOTTOM;
+    } else if(ABS(trace.z - ceil(trace.z)) <= PHYS_TOL*1.1) {
+      side = SOUTH;
+    } else {
+      side = NORTH;
+    }
 
     Vector3d *rot = &player->apos;
     if(phys_is_grounded(world, player)) {

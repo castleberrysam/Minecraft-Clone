@@ -1,10 +1,4 @@
 build/
 dist/
-glfw/
-glew/
-freetype2/
-win/
-hierarchy.txt
-texture_sources.txt
 include/
 lib/

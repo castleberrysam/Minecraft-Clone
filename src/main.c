@@ -271,7 +271,6 @@ int main(void)
       side = NORTH;
     }
 
-    Vector3d *rot = &player->apos;
     if(phys_is_grounded(world, player)) {
       if(player->vel.x >= FRICTION) {
 	player->vel.x -= FRICTION;
@@ -293,20 +292,20 @@ int main(void)
       }
     }
     if(glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {
-      player->vel.x = sin(RADS(rot->y)) * MOVE_VEL;
-      player->vel.z = -cos(RADS(rot->y)) * MOVE_VEL;
+      player->vel.x = sin(RADS(player->apos.y)) * MOVE_VEL;
+      player->vel.z = -cos(RADS(player->apos.y)) * MOVE_VEL;
     }
     if(glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) {
-      player->vel.x = sin(RADS(rot->y-90)) * MOVE_VEL;
-      player->vel.z = -cos(RADS(rot->y-90)) * MOVE_VEL;
+      player->vel.x = sin(RADS(player->apos.y-90)) * MOVE_VEL;
+      player->vel.z = -cos(RADS(player->apos.y-90)) * MOVE_VEL;
     }
     if(glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) {
-      player->vel.x = -sin(RADS(rot->y)) * MOVE_VEL;
-      player->vel.z = cos(RADS(rot->y)) * MOVE_VEL;
+      player->vel.x = -sin(RADS(player->apos.y)) * MOVE_VEL;
+      player->vel.z = cos(RADS(player->apos.y)) * MOVE_VEL;
     }
     if(glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) {
-      player->vel.x = sin(RADS(rot->y+90)) * MOVE_VEL;
-      player->vel.z = -cos(RADS(rot->y+90)) * MOVE_VEL;
+      player->vel.x = sin(RADS(player->apos.y+90)) * MOVE_VEL;
+      player->vel.z = -cos(RADS(player->apos.y+90)) * MOVE_VEL;
     }
     player->vel.y -= 9.81/30;
 

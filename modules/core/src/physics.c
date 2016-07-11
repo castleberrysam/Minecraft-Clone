@@ -4,9 +4,6 @@
 #include <float.h>
 #include "physics.h"
 
-const double PI = 3.14159265;
-const double PHYS_TOL = 0.000000001;
-
 static double phys_time_target(double pos, double vel)
 {
   if(vel > 0.0) {

@@ -40,69 +40,56 @@ typedef struct {
   double w;
 } Vector4d;
 
-inline void vec_set3i(Vector3i *out, int64_t x, int64_t y, int64_t z);
-inline void vec_set3d(Vector3d *out, double x, double y, double z);
-inline void vec_add3i(Vector3i *out, Vector3i *left, Vector3i *right);
-inline void vec_add3d(Vector3d *out, Vector3d *left, Vector3d *right);
-inline void vec_scale3i(Vector3i *out, Vector3i *vec, int64_t scale);
-inline void vec_div3i(Vector3i *out, Vector3i *vec, int64_t divisor);
-inline void vec_mod3i(Vector3i *out, Vector3i *vec, int64_t divisor);
-inline void vec_scale3d(Vector3d *out, Vector3d *vec, double scale);
-inline void vec_copy3i(Vector3i *new, Vector3i *old);
-inline void vec_copy3d(Vector3d *new, Vector3d *old);
-inline bool vec_equal3i(Vector3i *left, Vector3i *right);
-inline bool vec_equal3d(Vector3d *left, Vector3d *right);
-
-inline void vec_set3i(Vector3i *out, int64_t x, int64_t y, int64_t z)
+static inline void vec_set3i(Vector3i *out, int64_t x, int64_t y, int64_t z)
 {
   out->x = x;
   out->y = y;
   out->z = z;
 }
 
-inline void vec_set3d(Vector3d *out, double x, double y, double z)
+static inline void vec_set3d(Vector3d *out, double x, double y, double z)
 {
   out->x = x;
   out->y = y;
   out->z = z;
 }
 
-inline void vec_add3i(Vector3i *out, Vector3i *left, Vector3i *right)
+static inline void vec_add3i(Vector3i *out, Vector3i *left, Vector3i *right)
 {
   out->x = left->x + right->x;
   out->y = left->y + right->y;
   out->z = left->z + right->z;
 }
 
-inline void vec_add3d(Vector3d *out, Vector3d *left, Vector3d *right)
+static inline void vec_add3d(Vector3d *out, Vector3d *left, Vector3d *right)
 {
   out->x = left->x + right->x;
   out->y = left->y + right->y;
   out->z = left->z + right->z;
 }
 
-inline void vec_scale3i(Vector3i *out, Vector3i *vec, int64_t scale)
+static inline void vec_scale3i(Vector3i *out, Vector3i *vec, int64_t scale)
 {
   out->x = vec->x * scale;
   out->y = vec->y * scale;
   out->z = vec->z * scale;
 }
 
-inline void vec_scale3d(Vector3d *out, Vector3d *vec, double scale)
+static inline void vec_scale3d(Vector3d *out, Vector3d *vec, double scale)
 {
   out->x = vec->x * scale;
   out->y = vec->y * scale;
   out->z = vec->z * scale;
 }
 
-inline void vec_div3i(Vector3i *out, Vector3i *vec, int64_t divisor)
+static inline void vec_div3i(Vector3i *out, Vector3i *vec, int64_t divisor)
 {
   out->x = vec->x / divisor;
   out->y = vec->y / divisor;
   out->z = vec->z / divisor;
 }
 
-inline void vec_mod3i(Vector3i *out, Vector3i *vec, int64_t divisor)
+static inline void vec_mod3i(Vector3i *out, Vector3i *vec, int64_t divisor)
 {
   out->x = vec->x % divisor;
   out->y = vec->y % divisor;
@@ -112,21 +99,21 @@ inline void vec_mod3i(Vector3i *out, Vector3i *vec, int64_t divisor)
   if(out->z < 0) {out->z += divisor;}
 }
 
-inline void vec_copy3i(Vector3i *new, Vector3i *old)
+static inline void vec_copy3i(Vector3i *new, Vector3i *old)
 {
   new->x = old->x;
   new->y = old->y;
   new->z = old->z;
 }
 
-inline void vec_copy3d(Vector3d *new, Vector3d *old)
+static inline void vec_copy3d(Vector3d *new, Vector3d *old)
 {
   new->x = old->x;
   new->y = old->y;
   new->z = old->z;
 }
 
-inline bool vec_equal3i(Vector3i *left, Vector3i *right)
+static inline bool vec_equal3i(Vector3i *left, Vector3i *right)
 {
   if(left->x != right->x) {return false;}
   if(left->y != right->y) {return false;}
@@ -134,7 +121,7 @@ inline bool vec_equal3i(Vector3i *left, Vector3i *right)
   return true;
 }
 
-inline bool vec_equal3d(Vector3d *left, Vector3d *right)
+static inline bool vec_equal3d(Vector3d *left, Vector3d *right)
 {
   if(left->x != right->x) {return false;}
   if(left->y != right->y) {return false;}

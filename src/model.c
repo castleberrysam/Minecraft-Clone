@@ -87,7 +87,7 @@ bool model_gen_list(Model *model, void (*render)(void *user), void *user)
   }
 
   glNewList(model->data.list, GL_COMPILE);
-  draw(user);
+  render(user);
   glEndList();
 
 #ifdef DEBUG_GRAPHICS
@@ -109,9 +109,8 @@ void model_draw(Model *model)
 
 void render_cube(void *texture)
 {
-  GLuint *texture = user;
   glEnable(GL_TEXTURE_2D);
-  glBindTexture(GL_TEXTURE_2D, *texture);
+  glBindTexture(GL_TEXTURE_2D, *((GLuint *)texture));
   glColor4d(1.0, 1.0, 1.0, 1.0);
   glEnable(GL_DEPTH_TEST);
   glBegin(GL_QUADS);
@@ -181,9 +180,8 @@ void render_cube(void *texture)
 
 void render_skybox(void *texture)
 {
-  GLuint *texture = user;
   glEnable(GL_TEXTURE_2D);
-  glBindTexture(GL_TEXTURE_2D, *texture);
+  glBindTexture(GL_TEXTURE_2D, *((GLuint *) texture));
   glColor4d(1.0, 1.0, 1.0, 1.0);
   glEnable(GL_DEPTH_TEST);
   glBegin(GL_QUADS);

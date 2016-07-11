@@ -33,6 +33,8 @@ static enum {
   BOTTOM
 } side;
 
+static GLuint rock_texture, grass_texture;
+
 static void error(int error, const char *description)
 {
 #ifdef DEBUG_GRAPHICS
@@ -224,8 +226,8 @@ int main(void)
   Model rock_model, grass_model;
   model_init(&rock_model, DISPLAY_LIST);
   model_init(&grass_model, DISPLAY_LIST);
-  model_gen_list(&rock_model, cube_draw, (void *) &rock_texture);
-  model_gen_list(&grass_model, cube_draw, (void *) &grass_texture);
+  model_gen_list(&rock_model, render_cube, (void *) &rock_texture);
+  model_gen_list(&grass_model, render_cube, (void *) &grass_texture);
   Block rock, grass;
   block_init(&rock, &rock_model, 1, "block_rock", "Rock");
   block_init(&grass, &grass_model, 2, "block_grass", "Grass");

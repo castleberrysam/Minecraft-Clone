@@ -97,3 +97,10 @@ rm -rf *
 
 cd ../..
 rm -rf glfw/
+
+git clone https://github.com/cxong/tinydir
+cp tinydir/tinydir.h include/linux/
+cp tinydir/tinydir.h include/win/
+#cp tinydir/tinydir.h include/osx/
+
+rm -rf tinydir/

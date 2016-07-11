@@ -1,5 +1,4 @@
 #include <stdlib.h>
-#include <GL/glew.h>
 #include <png.h>
 #include "texture.h"
 

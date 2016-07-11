@@ -68,18 +68,13 @@ bool world_chunk_gen3i(World *world, Vector3i *pos, uint64_t seed)
 
   Chunk *chunk = malloc(sizeof(Chunk));
   chunk_init(chunk, pos);
-  if(pos->y < 0) {
+  if(pos->y < -1) {
     for(int j=0;j<4096;++j) {
-      chunk->blocks[j] = world->mappings[seed];
+      chunk->blocks[j] = world->mappings[0];
     }
-  } else if(pos->y == 0) {
-    for(int x=0;x<16;++x) {
-      for(int z=0;z<16;++z) {
-	for(int y=0;y<16;++y) {
-	  chunk->blocks[x+(y<<4)+(z<<8)] =
-	    (y > ABS(7- x) || y > ABS(7 - z) ? NULL : world->mappings[seed]);
-	}
-      }
+  } else if(pos->y < 0) {
+    for(int j=0;j<4096;++j) {
+      chunk->blocks[j] = world->mappings[1];
     }
   } else {
     for(int j=0;j<4096;++j) {

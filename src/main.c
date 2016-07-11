@@ -46,16 +46,16 @@ static void display(GLFWwindow *window)
   World *world = game->worlds[0];
   Entity *player = world->entities[0];
   
-  glClearColor(0x87/255.0, 0xce/255.0, 0xfa/255.0, 1.0);
+  glClearColor(1.0, 1.0, 1.0, 1.0);
   glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
-  
+
   glMatrixMode(GL_MODELVIEW);
   glLoadIdentity();
   glRotated(player->apos.x, 1.0, 0.0, 0.0);
   glRotated(player->apos.y, 0.0, 1.0, 0.0);
   glRotated(player->apos.z, 0.0, 0.0, 1.0);
+
   glTranslated(-player->pos.x, -player->pos.y-0.5, -player->pos.z);
-  
   world_draw(world);
   
   glMatrixMode(GL_PROJECTION);
@@ -158,88 +158,13 @@ static void keyboard(GLFWwindow *window, int key, int scancode, int action, int 
   switch(key) {
   case GLFW_KEY_SPACE:
     if(action == GLFW_PRESS && phys_is_grounded(game->worlds[0], game->worlds[0]->entities[0])) {
-      vel->y = ((modifiers & GLFW_MOD_CONTROL) != 0) ? sqrt(2*9.81*100.0) : sqrt(2*9.81*1.1);
+      vel->y = ((modifiers & GLFW_MOD_CONTROL) != 0) ? sqrt(2*9.81*100.0) : sqrt(2*9.81*1.4);
     }
     break;
   }
 #ifdef DEBUG
   fprintf(stderr, "[KEYBD] key %d, scan %d, action %d, mod %d\n", key, scancode, action, modifiers);
 #endif
-}
-
-static GLuint rock_texture = 0;
-static GLuint grass_texture = 0;
-
-static void cube_draw(void *user)
-{
-  GLuint *texture = user;
-  glEnable(GL_TEXTURE_2D);
-  glBindTexture(GL_TEXTURE_2D, *texture);
-  glColor4d(1.0, 1.0, 1.0, 1.0);
-  glEnable(GL_DEPTH_TEST);
-  glBegin(GL_QUADS);
-
-  // front
-  glTexCoord2d(0.0, 0.0);
-  glVertex3d(0.0, 0.0, 0.0);
-  glTexCoord2d(1.0, 0.0);
-  glVertex3d(1.0, 0.0, 0.0);
-  glTexCoord2d(1.0, 1.0);
-  glVertex3d(1.0, 1.0, 0.0);
-  glTexCoord2d(0.0, 1.0);
-  glVertex3d(0.0, 1.0, 0.0);
-  
-  // back
-  glTexCoord2d(0.0, 0.0);
-  glVertex3d(1.0, 0.0, 1.0);
-  glTexCoord2d(1.0, 0.0);
-  glVertex3d(0.0, 0.0, 1.0);
-  glTexCoord2d(1.0, 1.0);
-  glVertex3d(0.0, 1.0, 1.0);
-  glTexCoord2d(0.0, 1.0);
-  glVertex3d(1.0, 1.0, 1.0);
-
-  // left
-  glTexCoord2d(0.0, 0.0);
-  glVertex3d(0.0, 0.0, 1.0);
-  glTexCoord2d(1.0, 0.0);
-  glVertex3d(0.0, 0.0, 0.0);
-  glTexCoord2d(1.0, 1.0);
-  glVertex3d(0.0, 1.0, 0.0);
-  glTexCoord2d(0.0, 1.0);
-  glVertex3d(0.0, 1.0, 1.0);
-  
-  // right
-  glTexCoord2d(0.0, 0.0);
-  glVertex3d(1.0, 0.0, 0.0);
-  glTexCoord2d(1.0, 0.0);
-  glVertex3d(1.0, 0.0, 1.0);
-  glTexCoord2d(1.0, 1.0);
-  glVertex3d(1.0, 1.0, 1.0);
-  glTexCoord2d(0.0, 1.0);
-  glVertex3d(1.0, 1.0, 0.0);
-
-  // top
-  glTexCoord2d(0.0, 0.0);
-  glVertex3d(0.0, 1.0, 0.0);
-  glTexCoord2d(1.0, 0.0);
-  glVertex3d(1.0, 1.0, 0.0);
-  glTexCoord2d(1.0, 1.0);
-  glVertex3d(1.0, 1.0, 1.0);
-  glTexCoord2d(0.0, 1.0);
-  glVertex3d(0.0, 1.0, 1.0);
-
-  // bottom
-  glTexCoord2d(0.0, 0.0);
-  glVertex3d(0.0, 0.0, 1.0);
-  glTexCoord2d(1.0, 0.0);
-  glVertex3d(1.0, 0.0, 1.0);
-  glTexCoord2d(1.0, 1.0);
-  glVertex3d(1.0, 0.0, 0.0);
-  glTexCoord2d(0.0, 1.0);
-  glVertex3d(0.0, 0.0, 0.0);
-
-  glEnd();
 }
 
 static long trender_max = 0, tphysics_max = 0, ttotal_max = 0;
@@ -280,6 +205,8 @@ int main(void)
   font = malloc(sizeof(Font));
 #ifdef __MINGW32__
   font_init(font, "C:\\Windows\\Fonts\\arial.ttf", 12);
+#elif defined __APPLE__
+  font_init(font, "/Library/Fonts/Arial.ttf", 12);
 #else
   font_init(font, "/usr/share/fonts/TTF/arial.ttf", 12);
 #endif
@@ -309,9 +236,9 @@ int main(void)
     struct timespec start, finish, begin, end;
     clock_gettime(CLOCK_REALTIME, &start);
 
-    for(double x=-0.5;x<1.0;++x) {
-      for(double y=-0.5;y<1.0;++y) {
-	for(double z=-0.5;z<1.0;++z) {
+    for(double x=-0.5;x<2.0;++x) {
+      for(double y=-0.5;y<2.0;++y) {
+	for(double z=-0.5;z<2.0;++z) {
 	  Vector3d tmp;
 	  vec_set3d(&tmp, x+floor(player->pos.x/16), y+floor(player->pos.y/16), z+floor(player->pos.z/16));
 	  world_chunk_gen3d(world, &tmp, 0);

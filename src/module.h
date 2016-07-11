@@ -12,12 +12,10 @@ typedef struct {
   char *name;
   char *author;
   char *version;
-  Block *blocks;
-  Object *objects;
-  Model *models;
-  Entity *entities;
-  Player *players;
-  Action *actions;
+  Block **blocks;
+  Model **models;
+  Entity **entities;
+  Action **actions;
 } Module;
 
 #endif /* MODULE_H */

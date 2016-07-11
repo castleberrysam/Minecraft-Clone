@@ -33,7 +33,10 @@ typedef struct {
 void model_init(Model *model, ModelType type);
 void model_delete(Model *model);
 void model_copy(Model *new, Model *old);
-bool model_gen_list(Model *model, void (*draw)(void *user), void *user);
+bool model_gen_list(Model *model, void (*render)(void *user), void *user);
 void model_draw(Model *model);
+
+void render_cube(void *texture);
+void render_skybox(void *texture);
 
 #endif /* MODEL_H */

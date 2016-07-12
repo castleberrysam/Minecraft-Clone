@@ -7,9 +7,9 @@ OSX_LIBS =
 LIN_BIN = game
 WIN_BIN = game.exe
 OSX_BIN =
-ALL_FLAGS = -g -Wall -mtune=generic -std=c11
+ALL_FLAGS = -g -Wall -mtune=generic
 LIN_FLAGS = 
-WIN_FLAGS = -DGLFW_DLL
+WIN_FLAGS = -std=c11 -DGLFW_DLL
 OSX_FLAGS = 
 
 SRC_FILES := $(wildcard src/*.c)

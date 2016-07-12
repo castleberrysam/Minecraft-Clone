@@ -7,9 +7,9 @@ OSX_LIBS =
 LIN_BIN = libcore.so
 WIN_BIN = core.dll
 OSX_BIN = 
-ALL_FLAGS = -g -Wall -mtune=generic -fPIC -std=c11
+ALL_FLAGS = -g -Wall -mtune=generic -fPIC
 LIN_FLAGS = 
-WIN_FLAGS = 
+WIN_FLAGS = -std=c11
 OSX_FLAGS = 
 ALL_LINK = -shared
 LIN_LINK = 

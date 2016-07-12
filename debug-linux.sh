@@ -1,4 +1,4 @@
 #!/bin/bash
 
-source setldpath.sh
+source setldpath-linux.sh
 gdb -i=mi dist/linux/game

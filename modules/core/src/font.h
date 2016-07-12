@@ -17,6 +17,7 @@ typedef struct {
 
 bool font_init(Font *font, char *filepath, int size);
 void font_delete(Font *font);
-void font_draw_text(Font *font, char *text);
+void font_text_draw(Font *font, char *text);
+int font_text_width(Font *font, char *text);
 
 #endif /* FONT_H */

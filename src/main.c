@@ -48,6 +48,9 @@ static enum {
   BOTTOM
 } side;
 
+static int num_mappings = 0;
+static int current_block = 0;
+
 static void error(int error, const char *description)
 {
 #ifdef DEBUG_GRAPHICS
@@ -86,7 +89,13 @@ static void display(GLFWwindow *window)
   glColor4d(1.0, 1.0, 1.0, 1.0);
   char tmp[64];
   snprintf(tmp, 64, "FPS: %d", fps);
-  font_draw_text(font, tmp);
+  font_text_draw(font, tmp);
+
+  glLoadIdentity();
+  char *name = world->mappings[current_block]->name;
+  glTranslated((width-font_text_width(font, name))/2.0, 50.0, 0.0);
+  glColor4d(1.0, 1.0, 1.0, 1.0);
+  font_text_draw(font, name);
 
   glLoadIdentity();
   glTranslated(width/2, height/2, 0.0);
@@ -161,9 +170,16 @@ static void click(GLFWwindow *window, int button, int action, int modifiers)
     vec_add3d(&pos1, &player->pos, &player->bb_off);
     vec_set3d(&dim2, 0.5, 0.5, 0.5);
     if(!phys_aabb_intersect(&pos1, &player->bb_dim, &tmp, &dim2)) {
-      world_block_set3d(game->worlds[0], &tmp, game->worlds[0]->mappings[0]);
+      world_block_set3d(game->worlds[0], &tmp, game->worlds[0]->mappings[current_block]);
     }
   }
+}
+
+static void scroll(GLFWwindow *window, double x, double y)
+{
+  current_block += (int) y;
+  current_block %= num_mappings;
+  while(current_block < 0) {current_block += num_mappings;}
 }
 
 static void keyboard(GLFWwindow *window, int key, int scancode, int action, int modifiers)
@@ -209,6 +225,7 @@ int main(void)
   glfwSetWindowRefreshCallback(window, display);
   glfwSetCursorPosCallback(window, mouse);
   glfwSetMouseButtonCallback(window, click);
+  glfwSetScrollCallback(window, scroll);
   glfwSetKeyCallback(window, keyboard);
 
   int width, height;
@@ -244,7 +261,6 @@ int main(void)
   printf("[INIT ] loaded module %s version %s by %s\n",
     terrain.get_name(), terrain.get_ver(), terrain.get_author());
   Block **blocks = terrain.get_blocks();
-  int num_mappings = 0;
   Block *block = blocks[num_mappings];
   while(block != NULL) {
     world_add_mapping(world, block);

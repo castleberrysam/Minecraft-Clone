@@ -125,7 +125,7 @@ void font_delete(Font *font)
   free(font->advance);
 }
 
-void font_draw_text(Font *font, char *text)
+void font_text_draw(Font *font, char *text)
 {
   double off = 0.0;
   glEnable(GL_BLEND);
@@ -152,4 +152,14 @@ void font_draw_text(Font *font, char *text)
     
     off += font->advance[glyph] / 64.0;
   }
+}
+
+int font_text_width(Font *font, char *text)
+{
+  double width = 0.0;
+  for(int i=0;i<strlen(text);++i) {
+    FT_UInt glyph = FT_Get_Char_Index(font->face, text[i]);
+    width += font->advance[glyph];
+  }
+  return (int) (width / 64.0);
 }

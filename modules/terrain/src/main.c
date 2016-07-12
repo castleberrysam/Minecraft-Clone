@@ -56,9 +56,9 @@ __attribute__((constructor)) void load(void)
     model_gen_list(&model, render_cube, &texture);
     char str_id[69];
     snprintf(str_id, 64, "block_%s", file.name);
-    str_id[strlen(str_id)-5] = '\0';
+    str_id[strlen(str_id)-4] = '\0';
     Block *block = malloc(sizeof(Block));
-    block_init(block, &model, num_blocks, str_id, str_id);
+    block_init(block, &model, num_blocks-1, str_id, str_id);
     model_delete(&model);
     
     ++num_blocks;

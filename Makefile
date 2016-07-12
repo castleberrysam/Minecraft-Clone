@@ -16,7 +16,7 @@ SRC_FILES := $(wildcard src/*.c)
 LIN_BUILD := $(patsubst src/%.c, build/linux/%.o, $(SRC_FILES))
 WIN_BUILD := $(patsubst src/%.c, build/win/%.o, $(SRC_FILES))
 OSX_BUILD := $(patsubst src/%.c, build/osx/%.o, $(SRC_FILES))
-all: core linux
+all: core linux win
 core:
 	make -C modules/core clean
 	make -C modules/core all

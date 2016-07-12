@@ -7,7 +7,7 @@ OSX_LIBS =
 LIN_BIN = libcore.so
 WIN_BIN = core.dll
 OSX_BIN = 
-ALL_FLAGS = -g -Wall -mtune=generic -fPIC
+ALL_FLAGS = -g -Wall -mtune=generic -fPIC -std=c11
 LIN_FLAGS = 
 WIN_FLAGS = 
 OSX_FLAGS = 
@@ -39,11 +39,8 @@ build:
 	mkdir -p build/osx/
 dist:
 	mkdir -p dist/linux/
-	cp -r res/ dist/linux/res/
 	mkdir -p dist/win/
-	cp -r res/ dist/win/res/
 	mkdir -p dist/osx/
-	cp -r res/ dist/osx/res/
 clean:
 	-rm -rf build/
 	-rm -rf dist/

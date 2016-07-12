@@ -7,6 +7,19 @@ void game_init(Game *game)
   game->worlds[0] = NULL;
 }
 
+void game_delete(Game *game)
+{
+  int i = 0;
+  World *world = game->worlds[i];
+  while(world != NULL) {
+    world_delete(world);
+    free(world);
+    
+    world = game->worlds[++i];
+  }
+  free(game->worlds);
+}
+
 bool game_alloc_worlds(Game *game, int num)
 {
   int i = 0;
@@ -38,6 +51,6 @@ bool game_del_world(Game *game, World *world)
   if(j < 0) {return false;}
   
   game->worlds[j] = game->worlds[i-1];
-  game->worlds[i] = NULL;
+  game->worlds[i-1] = NULL;
   return true;
 }

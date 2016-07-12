@@ -9,6 +9,7 @@ typedef struct {
 } Game;
 
 void game_init(Game *game);
+void game_delete(Game *game);
 bool game_alloc_worlds(Game *game, int num);
 bool game_del_world(Game *game, World *world);
 

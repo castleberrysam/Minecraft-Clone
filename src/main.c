@@ -10,6 +10,7 @@
 #include "physics.h"
 #include "texture.h"
 #include "font.h"
+#include "module.h"
 
 static const double MOUSE_SENS = 0.1;
 static double lastx = 0.0;
@@ -32,8 +33,6 @@ static enum {
   TOP,
   BOTTOM
 } side;
-
-static GLuint rock_texture, grass_texture;
 
 static void error(int error, const char *description)
 {
@@ -221,18 +220,23 @@ int main(void)
   Entity *player = world->entities[0];
   glfwSetWindowUserPointer(window, game);
   
-  rock_texture = load_texture("res/rock.png");
-  grass_texture = load_texture("res/tiled_grass.png");
-  Model rock_model, grass_model;
-  model_init(&rock_model, DISPLAY_LIST);
-  model_init(&grass_model, DISPLAY_LIST);
-  model_gen_list(&rock_model, render_cube, (void *) &rock_texture);
-  model_gen_list(&grass_model, render_cube, (void *) &grass_texture);
-  Block rock, grass;
-  block_init(&rock, &rock_model, 1, "block_rock", "Rock");
-  block_init(&grass, &grass_model, 2, "block_grass", "Grass");
-  world_add_mapping(world, &rock);
-  world_add_mapping(world, &grass);
+  Module terrain;
+#ifdef __MINGW32__
+  module_init(&terrain, "terrain.dll");
+#else
+  module_init(&terrain, "libterrain.so");
+#endif
+  module_load(&terrain);
+  printf("[INIT ] loaded module %s version %s by %s\n",
+    terrain.get_name(), terrain.get_ver(), terrain.get_author());
+  Block **blocks = terrain.get_blocks();
+  int num_mappings = 0;
+  Block *block = blocks[num_mappings];
+  while(block != NULL) {
+    world_add_mapping(world, block);
+    
+    block = blocks[++num_mappings];
+  }
 
   while(!glfwWindowShouldClose(window)) {
     struct timespec start, finish, begin, end;
@@ -243,7 +247,7 @@ int main(void)
 	for(double z=-0.5;z<2.0;++z) {
 	  Vector3d tmp;
 	  vec_set3d(&tmp, x+floor(player->pos.x/16), y+floor(player->pos.y/16), z+floor(player->pos.z/16));
-	  world_chunk_gen3d(world, &tmp, 0);
+	  world_chunk_gen3d(world, &tmp, num_mappings);
 	}
       }
     }
@@ -354,6 +358,11 @@ int main(void)
 
   fprintf(stderr, "[INIT ] exiting main loop, render max %d, physics max %d, total max %d (%d fps)\n",
 	  (int) trender_max, (int) tphysics_max, (int) ttotal_max, (int) (1000000/ttotal_max));
+
+  module_delete(&terrain);
+  game_del_world(game, world);
+  game_delete(game);
+  free(game);
   
   glfwTerminate();
   return 0;

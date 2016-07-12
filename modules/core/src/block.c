@@ -14,9 +14,9 @@ void block_init(Block *block, Model *model, uint16_t num_id, char *str_id, char 
 
 void block_delete(Block *block)
 {
-  model_delete(&block->model);
-  free(&block->str_id);
-  free(&block->name);
+  model_delete((Model *) block);
+  free(block->str_id);
+  free(block->name);
 }
 
 void block_copy(Block *new, Block *old)

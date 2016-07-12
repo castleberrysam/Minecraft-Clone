@@ -28,7 +28,11 @@ void world_delete(World *world)
   i = 0;
   Entity *entity = world->entities[i];
   while(entity != NULL) {
-    entity_delete(entity);
+    if(entity->type == PLAYER) {
+      player_delete((Player *) entity);
+    } else {
+      entity_delete(entity);
+    }
     free(entity);
     entity = world->entities[++i];
   }
@@ -48,8 +52,6 @@ void world_delete(World *world)
 
 bool world_chunk_gen3i(World *world, Vector3i *pos, uint64_t seed)
 {
-  seed = (pos->x & 1) ^ (pos->z & 1);
-  
 #ifdef DEBUG
   fprintf(stderr, "[WORLD] new chunk <%d, %d, %d> seed %d\n",
 	  (int) pos->x, (int) pos->y, (int) pos->z, (int) seed);
@@ -68,13 +70,9 @@ bool world_chunk_gen3i(World *world, Vector3i *pos, uint64_t seed)
 
   Chunk *chunk = malloc(sizeof(Chunk));
   chunk_init(chunk, pos);
-  if(pos->y < -1) {
+  if(pos->y < 0) {
     for(int j=0;j<4096;++j) {
-      chunk->blocks[j] = world->mappings[0];
-    }
-  } else if(pos->y < 0) {
-    for(int j=0;j<4096;++j) {
-      chunk->blocks[j] = world->mappings[1];
+      chunk->blocks[j] = world->mappings[rand()%seed];
     }
   } else {
     for(int j=0;j<4096;++j) {

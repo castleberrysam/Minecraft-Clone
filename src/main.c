@@ -324,6 +324,8 @@ int main(void)
       } else {
 	player->vel.z = 0.0;
       }
+    } else {
+      player->vel.y -= 9.81/30;
     }
     if(glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {
       player->vel.x = sin(RADS(player->apos.y)) * MOVE_VEL;
@@ -341,7 +343,6 @@ int main(void)
       player->vel.x = sin(RADS(player->apos.y+90)) * MOVE_VEL;
       player->vel.z = -cos(RADS(player->apos.y+90)) * MOVE_VEL;
     }
-    player->vel.y -= 9.81/30;
 
     clock_gettime(CLOCK_REALTIME, &begin);
 #ifdef DEBUG

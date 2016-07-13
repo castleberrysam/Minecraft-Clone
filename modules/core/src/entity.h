@@ -14,9 +14,13 @@ typedef struct {
   EntityType type;
   Vector3d pos;
   Vector3d vel;
+  // used during physics
+  Vector3d old_vel;
   // angular equivalents
   Vector3d apos;
   Vector3d avel;
+  // used during physics
+  Vector3d old_avel;
   // bounding box (rectangular)
   Vector3d bb_dim;
   Vector3d bb_off;

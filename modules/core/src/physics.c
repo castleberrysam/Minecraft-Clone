@@ -137,14 +137,15 @@ double phys_update(World *world, double tmax)
   int i = 0;
   Entity *entity = world->entities[i];
   while(entity != NULL) {
-#ifdef DEBUG
-    fprintf(stderr, "[PHYS ] entity %p has pos <%.2f, %.2f, %.2f> and vel <%.2f, %.2f, %.2f>\n",
-	    entity, entity->pos.x, entity->pos.y, entity->pos.z,
-	    entity->vel.x, entity->vel.y, entity->vel.z);
-#endif
+    vec_copy3d(&entity->old_vel, &entity->vel);
     double x = entity->pos.x + entity->bb_off.x + (entity->vel.x > 0 ? entity->bb_dim.x : -entity->bb_dim.x);
     double y = entity->pos.y + entity->bb_off.y + (entity->vel.y > 0 ? entity->bb_dim.y : -entity->bb_dim.y);
     double z = entity->pos.z + entity->bb_off.z + (entity->vel.z > 0 ? entity->bb_dim.z : -entity->bb_dim.z);
+#ifdef DEBUG
+    fprintf(stderr, "[PHYS ] entity %p has pos <%.2f, %.2f, %.2f> and vel <%.2f, %.2f, %.2f>\n",
+	    entity, x, y, z,
+	    entity->vel.x, entity->vel.y, entity->vel.z);
+#endif
     double tx = phys_time_target(x, entity->vel.x);
     double ty = phys_time_target(y, entity->vel.y);
     double tz = phys_time_target(z, entity->vel.z);
@@ -293,10 +294,10 @@ double phys_update(World *world, double tmax)
       }
     }
 
+  next:
 #ifdef DEBUG
     fprintf(stderr, "[PHYS ] entity finished, time step is %.4f\n", t);
 #endif
-  next:
     entity = world->entities[++i];
   }
 
@@ -309,16 +310,20 @@ double phys_update(World *world, double tmax)
   while(entity != NULL) {
     Vector3d tmp;
 
-    vec_scale3d(&tmp, &entity->vel, t);
+    vec_scale3d(&tmp, &entity->old_vel, t);
     vec_add3d(&entity->pos, &entity->pos, &tmp);
 
     vec_scale3d(&tmp, &entity->avel, t);
     vec_add3d(&entity->apos, &entity->apos, &tmp);
 
 #ifdef DEBUG
-    fprintf(stderr, "[PHYS ] entity %p now has pos <%.2f, %.2f, %.2f> and vel <%.2f, %.2f, %.2f>\n",
-	    entity, entity->pos.x, entity->pos.y, entity->pos.z,
-	    entity->vel.x, entity->vel.y, entity->vel.z);
+    double x = entity->pos.x + entity->bb_off.x + (entity->vel.x > 0 ? entity->bb_dim.x : -entity->bb_dim.x);
+    double y = entity->pos.y + entity->bb_off.y + (entity->vel.y > 0 ? entity->bb_dim.y : -entity->bb_dim.y);
+    double z = entity->pos.z + entity->bb_off.z + (entity->vel.z > 0 ? entity->bb_dim.z : -entity->bb_dim.z);
+    fprintf(stderr, "[PHYS ] entity %p now has pos <%.2f, %.2f, %.2f> and vel <%.2f, %.2f, %.2f> after t %.4f\n",
+	    entity, x, y, z,
+	    entity->vel.x, entity->vel.y, entity->vel.z,
+	    t);
 #endif
     entity = world->entities[++i];
   }

@@ -74,7 +74,7 @@ void model_copy(Model *new, Model *old)
 bool model_gen_list(Model *model, void (*render)(void *user), void *user)
 {
 #ifdef DEBUG_GRAPHICS
-  fprintf(stderr, "[MODEL] gen list for model %p, draw func %p\n", model, draw);
+  fprintf(stderr, "[MODEL] gen list for model %p, draw func %p\n", model, render);
 #endif
   if(model->type != DISPLAY_LIST) {return false;}
   glDeleteLists(model->data.list, 1);

@@ -48,18 +48,14 @@ __attribute__((constructor)) void load(void)
     if(file.is_dir || len < 5 ||
        strcmp(&file.name[len-4], ".png") != 0) {goto next;}
     
-    GLuint texture = load_texture(file.path);
-    if(texture == 0) {goto next;}
-
-    Model model;
-    model_init(&model, DISPLAY_LIST);
-    model_gen_list(&model, render_cube, &texture);
+    GLint texture = texture_load(file.path);
+    if(texture == -1) {goto next;}
+    
     char str_id[69];
     snprintf(str_id, 64, "block_%s", file.name);
     str_id[strlen(str_id)-4] = '\0';
     Block *block = malloc(sizeof(Block));
-    block_init(block, &model, num_blocks-1, str_id, str_id);
-    model_delete(&model);
+    block_init(block, texture, str_id, str_id);
     
     ++num_blocks;
     blocks = realloc(blocks, num_blocks*sizeof(Block *));

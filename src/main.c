@@ -25,6 +25,7 @@ int clock_gettime(int clk_id, struct timespec *t) {
 #include "texture.h"
 #include "font.h"
 #include "module.h"
+#include "matrix.h"
 
 static const double MOUSE_SENS = 0.1;
 static double lastx = 0.0;
@@ -35,7 +36,8 @@ static const double FRICTION = 0.2;
 
 static Font *font;
 
-static int fps = 0;
+#define FPS_LIM 60
+static int fps = FPS_LIM;
 
 static bool selecting = false;
 static Vector3d trace;
@@ -51,6 +53,16 @@ static enum {
 static int num_mappings = 0;
 static int current_block = 0;
 
+static void glerror(GLenum source, GLenum type, GLuint id, GLenum severity,
+		    GLsizei length, const GLchar *message, void *userParam)
+{
+#ifdef DEBUG_GRAPHICS
+  if(severity == GL_DEBUG_SEVERITY_NOTIFICATION) {return;}
+  fprintf(stderr, "[INIT ] begin OpenGL error report\n[INIT ] source: %d\n[INIT ] type: %d\n[INIT ] id: %d\n[INIT ] severity: %d\n[INIT ] %s\n[INIT ] end report\n", source, type, id, severity, message);
+  asm("int $3");
+#endif
+}
+
 static void error(int error, const char *description)
 {
 #ifdef DEBUG_GRAPHICS
@@ -63,60 +75,43 @@ static void display(GLFWwindow *window)
   Game *game = glfwGetWindowUserPointer(window);
   World *world = game->worlds[0];
   Entity *player = world->entities[0];
-  
-  glClearColor(1.0, 1.0, 1.0, 1.0);
+
+  glClearColor(0x87/255.0, 0xce/255.0, 0xfa/255.0, 1.0);
   glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
-
-  glMatrixMode(GL_MODELVIEW);
-  glLoadIdentity();
-  glRotated(player->apos.x, 1.0, 0.0, 0.0);
-  glRotated(player->apos.y, 0.0, 1.0, 0.0);
-  glRotated(player->apos.z, 0.0, 0.0, 1.0);
-
-  glTranslated(-player->pos.x, -player->pos.y-0.5, -player->pos.z);
+  
+  matrix_identity(mview_matrix);
+  matrix_rotate_x(mview_matrix, RADS(player->apos.x));
+  matrix_rotate_y(mview_matrix, RADS(player->apos.y));
+  
+  matrix_translate(mview_matrix, -player->pos.x, -player->pos.y-0.5, -player->pos.z);
   world_draw(world);
   
-  glMatrixMode(GL_PROJECTION);
-  glPushMatrix();
-  glLoadIdentity();
-  int width, height;
-  glfwGetFramebufferSize(window, &width, &height);
-  glOrtho(0, width, 0, height, -0.1, 0.1);
-
-  glMatrixMode(GL_MODELVIEW);
-  glLoadIdentity();
-  glTranslated(10.0, 10.0, 0.0);
-  glColor4d(1.0, 1.0, 1.0, 1.0);
+  mstack_pick(mstack, proj_matrix, 0);
+  
+  matrix_identity(mview_matrix);
+  matrix_translate(mview_matrix, 10.0, 10.0, 0.0);
   char tmp[64];
   snprintf(tmp, 64, "FPS: %d", fps);
   font_text_draw(font, tmp);
 
-  glLoadIdentity();
+  int width;
+  glfwGetFramebufferSize(window, &width, NULL);
+  matrix_identity(mview_matrix);
   char *name = world->mappings[current_block]->name;
-  glTranslated((width-font_text_width(font, name))/2.0, 50.0, 0.0);
-  glColor4d(1.0, 1.0, 1.0, 1.0);
+  matrix_translate(mview_matrix, (width-font_text_width(font, name))/2.0, 50.0, 0.0);
   font_text_draw(font, name);
 
-  glLoadIdentity();
-  glTranslated(width/2, height/2, 0.0);
-  glPointSize(10.0);
-  glDisable(GL_TEXTURE_2D);
-  glColor4d(1.0, 1.0, 1.0, 1.0);
-  glBegin(GL_POINTS);
-  glVertex2d(0.0, 0.0);
-  glEnd();
+  mstack_pick(mstack, proj_matrix, 1);
 
-  glMatrixMode(GL_PROJECTION);
-  glPopMatrix();
-  
   glfwSwapBuffers(window);
 }
 
 static void reshape(GLFWwindow *window, int width, int height)
 {
-  glMatrixMode(GL_PROJECTION);
-  glLoadIdentity();
-  gluPerspective(90.0, ((double) width)/height, 0.1, 100.0);
+  matrix_ortho(proj_matrix, width, height, -0.1, 0.1);
+  mstack_replace(mstack, proj_matrix, 0);
+  matrix_perspective(proj_matrix, RADS(85.0), ((double) width)/height, 0.001, 100.0);
+  mstack_replace(mstack, proj_matrix, 1);
   glViewport(0, 0, width, height);
 #ifdef DEBUG_GRAPHICS
   fprintf(stderr, "[RESHP] width %d height %d\n", width, height);
@@ -210,7 +205,8 @@ int main(void)
 #endif
     return 1;
   }
-  
+
+  glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, GLFW_TRUE);
   GLFWwindow *window = glfwCreateWindow(800, 800, "test", NULL, NULL);
   if(!window) {
 #ifdef DEBUG
@@ -221,6 +217,25 @@ int main(void)
   }
   glfwMakeContextCurrent(window);
 
+  if(glewInit() != GLEW_OK) {
+#ifdef DEBUG
+    fprintf(stderr, "[INIT ] glew failed to initialize\n");
+#endif
+    return 1;
+  }
+  /*
+  if(!GLEW_VERSION_4_0) {
+#ifdef DEBUG
+    fprintf(stderr, "[INIT ] context does not support OpenGl 4.0\n");
+#endif
+    return 1;
+  }
+  */
+
+  glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
+  glDebugMessageControl(GL_DONT_CARE, GL_DONT_CARE, GL_DONT_CARE, 0, NULL, GL_TRUE);
+  glDebugMessageCallback((GLDEBUGPROC) glerror, NULL);
+
   glfwSetFramebufferSizeCallback(window, reshape);
   glfwSetWindowRefreshCallback(window, display);
   glfwSetCursorPosCallback(window, mouse);
@@ -228,6 +243,10 @@ int main(void)
   glfwSetScrollCallback(window, scroll);
   glfwSetKeyCallback(window, keyboard);
 
+  matrix_static_init();
+  mstack_push(mstack, proj_matrix);
+  mstack_push(mstack, proj_matrix);
+  
   int width, height;
   glfwGetFramebufferSize(window, &width, &height);
   reshape(window, width, height);
@@ -268,6 +287,7 @@ int main(void)
     block = blocks[++num_mappings];
   }
 
+  uint64_t frame = 0;
   while(!glfwWindowShouldClose(window)) {
     struct timespec start, finish, begin, end;
     clock_gettime(CLOCK_REALTIME, &start);
@@ -325,7 +345,7 @@ int main(void)
 	player->vel.z = 0.0;
       }
     } else {
-      player->vel.y -= 9.81/30;
+      player->vel.y -= 9.81/fps;
     }
     if(glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {
       player->vel.x = sin(RADS(player->apos.y)) * MOVE_VEL;
@@ -349,8 +369,8 @@ int main(void)
     int cycles = 0;
 #endif
     double t = 0.0;
-    while(t < (1/30.0)) {
-      t += phys_update(world, (1/30.0) - t);
+    while(t < (1.0/fps)) {
+      t += phys_update(world, (1.0/fps) - t);
 #ifdef DEBUG
       ++cycles;
 #endif
@@ -373,28 +393,33 @@ int main(void)
     clock_gettime(CLOCK_REALTIME, &finish);
     finish.tv_nsec += (finish.tv_sec - start.tv_sec) * 1000000000;
     long ttotal = (finish.tv_nsec - start.tv_nsec) / 1000;
-    fps = 1000000 / ttotal;
-    if(fps > 30) {fps = 30;}
+    fps = MIN(1000000/ttotal, FPS_LIM);
 #ifdef DEBUG
     fprintf(stderr, "[INIT ] graphics %d, physics %d, total %d (%d fps)\n",
 	    (int) trender, (int) tphysics, (int) ttotal, fps);
 #endif
-    
-    trender_max = MAX(trender_max, trender);
-    tphysics_max = MAX(tphysics_max, tphysics);
-    ttotal_max = MAX(ttotal_max, ttotal);
-    
-    usleep(ttotal > (1000000/30) ? 0 : (1000000/30) - ttotal);
+
+    if(frame > 120) {
+      trender_max = MAX(trender_max, trender);
+      tphysics_max = MAX(tphysics_max, tphysics);
+      ttotal_max = MAX(ttotal_max, ttotal);
+    }
+
+    ++frame;
+    usleep(ttotal > (1000000/FPS_LIM) ? 0 : (1000000/FPS_LIM) - ttotal);
   }
 
-  fprintf(stderr, "[INIT ] exiting main loop, render max %d, physics max %d, total max %d (%d fps)\n",
-	  (int) trender_max, (int) tphysics_max, (int) ttotal_max, (int) (1000000/ttotal_max));
+  if(frame > 120) {
+    fprintf(stderr, "[INIT ] exiting main loop, render max %d, physics max %d, total max %d (%d fps)\n",
+	    (int) trender_max, (int) tphysics_max, (int) ttotal_max, (int) (1000000/ttotal_max));
+  } else {
+    fprintf(stderr, "[INIT ] runtime was too short to record stats\n");
+  }
 
   module_delete(&terrain);
-  game_del_world(game, world);
   game_delete(game);
   free(game);
-  
   glfwTerminate();
+  
   return 0;
 }

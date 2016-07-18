@@ -15,5 +15,6 @@ typedef struct {
 
 void player_init(Player *player);
 void player_delete(Player *player);
+void player_draw(Player *player);
 
 #endif /* PLAYER_H */

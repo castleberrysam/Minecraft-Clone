@@ -3,6 +3,7 @@
 #include <math.h>
 #include <GL/glew.h>
 #include "world.h"
+#include "matrix.h"
 
 void world_init(World *world)
 {
@@ -57,18 +58,18 @@ bool world_chunk_gen3i(World *world, Vector3i *pos, uint64_t seed)
 	  (int) pos->x, (int) pos->y, (int) pos->z, (int) seed);
 #endif
   int i = 0;
-  Chunk *tmp = world->chunks[i];
-  while(tmp != NULL) {
-    if(vec_equal3i(&tmp->pos, pos)) {
+  Chunk *chunk = world->chunks[i];
+  while(chunk != NULL) {
+    if(vec_equal3i(&chunk->pos, pos)) {
 #ifdef DEBUG
       fprintf(stderr, "[WORLD] that chunk already exists\n");
 #endif
       return false;
     }
-    tmp = world->chunks[++i];
+    chunk = world->chunks[++i];
   }
 
-  Chunk *chunk = malloc(sizeof(Chunk));
+  chunk = malloc(sizeof(Chunk));
   chunk_init(chunk, pos);
   if(pos->y < 0) {
     for(int j=0;j<4096;++j) {
@@ -359,16 +360,15 @@ void world_block_delete3d(World *world, Vector3d *pos)
 
 void world_draw(World *world)
 {
-  glColor4d(1.0, 1.0, 1.0, 1.0);
-  
+  mstack_push(mstack, mview_matrix);
   int i = 0;
   Chunk *chunk = world->chunks[i];
   while(chunk != NULL) {
-    glPushMatrix();
-    glTranslated(16.0*chunk->pos.x, 16.0*chunk->pos.y, 16.0*chunk->pos.z);
+    matrix_translate(mview_matrix, 16.0*chunk->pos.x, 16.0*chunk->pos.y, 16.0*chunk->pos.z);
     chunk_draw(chunk);
-    glPopMatrix();
+    mstack_pick(mstack, mview_matrix, 0);
     
     chunk = world->chunks[++i];
   }
+  mstack_pop(mstack, mview_matrix);
 }

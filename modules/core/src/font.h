@@ -4,14 +4,19 @@
 #include <stdbool.h>
 #include <ft2build.h>
 #include FT_FREETYPE_H
+#include FT_GLYPH_H
 
 typedef struct {
   FT_Face face;
-  GLuint *textures;
-  FT_Pos *width;
-  FT_Pos *height;
-  FT_Pos *left;
-  FT_Pos *top;
+  GLuint atlas;
+  int awidth;
+  int aheight;
+  int maxwidth;
+  int maxheight;
+  int *width;
+  int *height;
+  FT_Int *left;
+  FT_Int *top;
   FT_Pos *advance;
 } Font;
 

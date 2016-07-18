@@ -3,6 +3,8 @@
 
 #include <GL/glew.h>
 
-GLuint load_texture(char *filepath);
+extern GLuint texture_array;
+
+int texture_load(char *filepath);
 
 #endif /* TEXTURE_H */

@@ -53,15 +53,15 @@ static enum {
 static int num_mappings = 0;
 static int current_block = 0;
 
+#ifdef DEBUG_GRAPHICS
 static void glerror(GLenum source, GLenum type, GLuint id, GLenum severity,
 		    GLsizei length, const GLchar *message, void *userParam)
 {
-#ifdef DEBUG_GRAPHICS
   if(severity == GL_DEBUG_SEVERITY_NOTIFICATION) {return;}
   fprintf(stderr, "[INIT ] begin OpenGL error report\n[INIT ] source: %d\n[INIT ] type: %d\n[INIT ] id: %d\n[INIT ] severity: %d\n[INIT ] %s\n[INIT ] end report\n", source, type, id, severity, message);
   asm("int $3");
-#endif
 }
+#endif
 
 static void error(int error, const char *description)
 {
@@ -206,7 +206,9 @@ int main(void)
     return 1;
   }
 
+#ifdef DEBUG
   glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, GLFW_TRUE);
+#endif
   GLFWwindow *window = glfwCreateWindow(800, 800, "test", NULL, NULL);
   if(!window) {
 #ifdef DEBUG
@@ -223,18 +225,18 @@ int main(void)
 #endif
     return 1;
   }
-  /*
   if(!GLEW_VERSION_4_0) {
 #ifdef DEBUG
     fprintf(stderr, "[INIT ] context does not support OpenGl 4.0\n");
 #endif
     return 1;
   }
-  */
 
+#ifdef DEBUG
   glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
   glDebugMessageControl(GL_DONT_CARE, GL_DONT_CARE, GL_DONT_CARE, 0, NULL, GL_TRUE);
   glDebugMessageCallback((GLDEBUGPROC) glerror, NULL);
+#endif
 
   glfwSetFramebufferSizeCallback(window, reshape);
   glfwSetWindowRefreshCallback(window, display);

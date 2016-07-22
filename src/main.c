@@ -53,6 +53,8 @@ static enum {
 static int num_mappings = 0;
 static int current_block = 0;
 
+static GLuint program_points;
+
 #ifdef DEBUG_GRAPHICS
 static void glerror(GLenum source, GLenum type, GLuint id, GLenum severity,
 		    GLsizei length, const GLchar *message, void *userParam)
@@ -96,12 +98,26 @@ static void display(GLFWwindow *window)
   snprintf(tmp, 64, "FPS: %d", fps);
   font_text_draw(font, tmp);
 
-  int width;
-  glfwGetFramebufferSize(window, &width, NULL);
+  int width, height;
+  glfwGetFramebufferSize(window, &width, &height);
   matrix_identity(mview_matrix);
   char *name = world->mappings[current_block]->name;
   matrix_translate(mview_matrix, (width-font_text_width(font, name))/2.0, 50.0, 0.0);
   font_text_draw(font, name);
+
+  char coords[64];
+  snprintf(coords, 64, "(%.2f, %.2f, %.2f)", player->pos.x, player->pos.y, player->pos.z);
+  matrix_identity(mview_matrix);
+  matrix_translate(mview_matrix, width-10.0-font_text_width(font, coords), 10.0, 0.0);
+  font_text_draw(font, coords);
+
+  matrix_identity(mview_matrix);
+  matrix_translate(mview_matrix, width/2.0, height/2.0, 0.0);
+  glVertexAttrib3f(0, 0.0, 0.0, 0.0);
+  glDisableVertexAttribArray(0);
+  glUseProgram(program_points);
+  glPointSize(10.0);
+  glDrawArrays(GL_POINTS, 0, 1);
 
   mstack_pick(mstack, proj_matrix, 1);
 
@@ -267,6 +283,11 @@ int main(void)
 #else
   font_init(font, "/usr/share/fonts/TTF/arial.ttf", 12);
 #endif
+
+  GLuint shaders[2];
+  shaders[0] = load_shader("res/shader/point.vert", GL_VERTEX_SHADER);
+  shaders[1] = load_shader("res/shader/point.frag", GL_FRAGMENT_SHADER);
+  program_points = compile_program(2, shaders);
 
   Game *game = malloc(sizeof(Game));
   game_init(game);

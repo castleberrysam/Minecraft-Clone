@@ -30,6 +30,7 @@ bool world_chunk_delete3i(World *world, Vector3i *pos);
 bool world_chunk_delete3d(World *world, Vector3d *pos);
 Chunk * world_chunk_get3i(World *world, Vector3i *pos);
 void world_chunk_adjacent(World *world, Chunk *chunk, Chunk **adjacent);
+void world_chunk_regen_buffer(World *world, Vector3i *pos);
 bool world_alloc_entities(World *world, EntityType etype, Model *model, int num);
 bool world_alloc_players(World *world, int num);
 bool world_del_entity(World *world, Entity *entity);

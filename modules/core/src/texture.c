@@ -15,7 +15,7 @@ int texture_load(char *filepath)
     glTexImage3D(GL_TEXTURE_CUBE_MAP_ARRAY, 0, GL_RGB, 64, 64, 6*16,
 		 0, GL_RGBA, GL_UNSIGNED_BYTE, (const GLvoid *) NULL);
     glTexParameteri(GL_TEXTURE_CUBE_MAP_ARRAY, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_CUBE_MAP_ARRAY, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP_ARRAY, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
   }
   
   FILE *file = fopen(filepath, "rb");
@@ -92,7 +92,6 @@ int texture_load(char *filepath)
   fclose(file);
 
   glBindTexture(GL_TEXTURE_CUBE_MAP_ARRAY, texture_array);
-  //  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, (const GLvoid *) 0);
   for(int i=0;i<6;++i) {
     glTexSubImage3D(GL_TEXTURE_CUBE_MAP_ARRAY, 0, 0, 0, (num_textures*6)+i, width, height, 1,
 		    GL_RGBA, GL_UNSIGNED_BYTE, (const GLvoid *) 0);
@@ -102,6 +101,6 @@ int texture_load(char *filepath)
   fprintf(stderr, "[TEXTR] path %s, width %d, height %d, rowbytes %d\n", filepath, width, height, rowbytes);
 #endif
   glDeleteBuffers(1, &buffer);
-  //  return texture;
+  
   return num_textures++;
 }

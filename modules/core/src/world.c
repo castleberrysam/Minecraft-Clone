@@ -55,8 +55,8 @@ void world_delete(World *world)
 static double world_noise(int x, int y)
 {
   double result = 0.0;
-  result += sin(x / 300.0) * 12.7;
-  result += cos(y / 67.3) * 6.3;
+  result += sin(x / 300.0) * 34.7;
+  result += cos(y / 47.3) * 10.3;
   result += cos(x / 14.9) * 1.4;
   return result;
 }
@@ -83,14 +83,14 @@ bool world_chunk_gen3i(World *world, Vector3i *pos, uint64_t seed)
   chunk_init(chunk, pos);
   
   for(int x=0;x<16;++x) {
-    for(int y=0;y<16;++y) {
-      for(int z=0;z<16;++z) {
-	int absx = x + (pos->x * 16);
-	int absy = y + (pos->y * 16);
-	int absz = z + (pos->z * 16);
-	int index = x + (y * 16) + (z * 256);
+    for(int z=0;z<16;++z) {
+      int absx = x + (pos->x * 16);
+      int absz = z + (pos->z * 16);
 
-	double noise = world_noise(absx, absz);
+      double noise = world_noise(absx, absz);
+      for(int y=0;y<16;++y) {
+	int absy = y + (pos->y * 16);
+	int index = x + (y * 16) + (z * 256);
 	if(absy > noise) {continue;}
 	char *block = absy == floor(noise) ? "block_tiled" : "block_rock";
 	chunk->blocks[index] = world_mapping_get(world, block);
@@ -177,6 +177,13 @@ void world_chunk_adjacent(World *world, Chunk *chunk, Chunk **adjacent)
       }
     }
   }
+}
+
+void world_chunk_regen_buffer(World *world, Vector3i *pos)
+{
+  Chunk *chunk = world_chunk_get3i(world, pos);
+  if(chunk == NULL) {return;}
+  chunk->changed = true;
 }
 
 bool world_alloc_entities(World *world, EntityType etype, Model *model, int num)
@@ -352,29 +359,50 @@ Block * world_block_get3d(World *world, Vector3d *pos)
 
 void world_block_set3i(World *world, Vector3i *pos, Block *block)
 {
-  Vector3i tmp;
-  vec_copy3i(&tmp, pos);
-  if(pos->x < 0) {++tmp.x;}
-  if(pos->y < 0) {++tmp.y;}
-  if(pos->z < 0) {++tmp.z;}
-  vec_div3i(&tmp, &tmp, 16);
-  if(pos->x < 0) {--tmp.x;}
-  if(pos->y < 0) {--tmp.y;}
-  if(pos->z < 0) {--tmp.z;}
+  Vector3i bpos, cpos;
+  vec_copy3i(&cpos, pos);
+  if(pos->x < 0) {++cpos.x;}
+  if(pos->y < 0) {++cpos.y;}
+  if(pos->z < 0) {++cpos.z;}
+  vec_div3i(&cpos, &cpos, 16);
+  if(pos->x < 0) {--cpos.x;}
+  if(pos->y < 0) {--cpos.y;}
+  if(pos->z < 0) {--cpos.z;}
   
   int i = 0;
  postgen: ;
   Chunk *chunk = world->chunks[i];
   while(chunk != NULL) {
-    if(vec_equal3i(&chunk->pos, &tmp)) {
-      vec_mod3i(&tmp, pos, 16);
-      chunk_block_set(chunk, &tmp, block);
+    if(vec_equal3i(&chunk->pos, &cpos)) {
+      vec_mod3i(&bpos, pos, 16);
+      chunk_block_set(chunk, &bpos, block);
+      if(bpos.x == 0) {
+	vec_set3i(&cpos, cpos.x-1, cpos.y, cpos.z);
+	world_chunk_regen_buffer(world, &cpos);
+      } else if(bpos.x == 15) {
+	vec_set3i(&cpos, cpos.x+1, cpos.y, cpos.z);
+	world_chunk_regen_buffer(world, &cpos);
+      }
+      if(bpos.y == 0) {
+	vec_set3i(&cpos, cpos.x, cpos.y-1, cpos.z);
+	world_chunk_regen_buffer(world, &cpos);
+      } else if(bpos.y == 15) {
+	vec_set3i(&cpos, cpos.x, cpos.y+1, cpos.z);
+	world_chunk_regen_buffer(world, &cpos);
+      }
+      if(bpos.z == 0) {
+	vec_set3i(&cpos, cpos.x, cpos.y, cpos.z-1);
+	world_chunk_regen_buffer(world, &cpos);
+      } else if(bpos.z == 15) {
+	vec_set3i(&cpos, cpos.x, cpos.y, cpos.z+1);
+	world_chunk_regen_buffer(world, &cpos);
+      }
       return;
     }
     chunk = world->chunks[++i];
   }
   
-  world_chunk_gen3i(world, &tmp, 0);
+  world_chunk_gen3i(world, &cpos, 0);
   goto postgen;
 }
 

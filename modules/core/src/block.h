@@ -6,7 +6,7 @@
 #include "entity.h"
 
 typedef struct {
-  GLint texture;
+  GLuint texture;
   char *str_id;
   char *name;
 } Block;

@@ -2,12 +2,13 @@
 #include <stdio.h>
 #include <math.h>
 #include <GL/glew.h>
+#include <string.h>
 #include "world.h"
 #include "matrix.h"
 
 void world_init(World *world)
 {
-  world->chunks = malloc(sizeof(Chunk *) * 512);
+  world->chunks = malloc(sizeof(Chunk *) * 8192);
   world->chunks[0] = NULL;
   world->entities = malloc(sizeof(Entity *) * 512);
   world->entities[0] = NULL;
@@ -51,6 +52,15 @@ void world_delete(World *world)
 
 #define ABS(x) ((x) < 0 ? -(x) : (x))
 
+static double world_noise(int x, int y)
+{
+  double result = 0.0;
+  result += sin(x / 300.0) * 12.7;
+  result += cos(y / 67.3) * 6.3;
+  result += cos(x / 14.9) * 1.4;
+  return result;
+}
+
 bool world_chunk_gen3i(World *world, Vector3i *pos, uint64_t seed)
 {
 #ifdef DEBUG
@@ -71,13 +81,22 @@ bool world_chunk_gen3i(World *world, Vector3i *pos, uint64_t seed)
 
   chunk = malloc(sizeof(Chunk));
   chunk_init(chunk, pos);
-  if(pos->y < 0) {
-    for(int j=0;j<4096;++j) {
-      chunk->blocks[j] = world->mappings[rand()%seed];
-    }
-  } else {
-    for(int j=0;j<4096;++j) {
-      chunk->blocks[j] = NULL;
+  
+  for(int x=0;x<16;++x) {
+    for(int y=0;y<16;++y) {
+      for(int z=0;z<16;++z) {
+	int absx = x + (pos->x * 16);
+	int absy = y + (pos->y * 16);
+	int absz = z + (pos->z * 16);
+	int index = x + (y * 16) + (z * 256);
+
+	double noise = world_noise(absx, absz);
+	if(absy > noise) {continue;}
+	char *block = absy == floor(noise) ? "block_tiled" : "block_rock";
+	chunk->blocks[index] = world_mapping_get(world, block);
+	chunk->changed = true;
+	chunk->empty = false;
+      }
     }
   }
 
@@ -131,6 +150,33 @@ bool world_chunk_delete3d(World *world, Vector3d *pos)
   Vector3i tmp;
   vec_set3i(&tmp, (int64_t) floor(pos->x), (int64_t) floor(pos->y), (int64_t) floor(pos->z));
   return world_chunk_delete3i(world, &tmp);
+}
+
+Chunk *world_chunk_get3i(World *world, Vector3i *pos)
+{
+  int i = 0;
+  Chunk *chunk = world->chunks[i];
+  while(chunk != NULL) {
+    if(vec_equal3i(pos, &chunk->pos)) {return chunk;}
+
+    chunk = world->chunks[++i];
+  }
+
+  return NULL;
+}
+
+void world_chunk_adjacent(World *world, Chunk *chunk, Chunk **adjacent)
+{
+  Vector3i pos;
+  for(int x=0;x<3;++x) {
+    for(int y=0;y<3;++y) {
+      for(int z=0;z<3;++z) {
+	vec_set3i(&pos, x-1, y-1, z-1);
+	vec_add3i(&pos, &pos, &chunk->pos);
+	adjacent[x+(y*9)+(z*3)] = world_chunk_get3i(world, &pos);
+      }
+    }
+  }
 }
 
 bool world_alloc_entities(World *world, EntityType etype, Model *model, int num)
@@ -253,6 +299,18 @@ bool world_delete_mapping(World *world, Block *mapping)
   return true;
 }
 
+Block * world_mapping_get(World *world, char *str_id)
+{
+  int i = 0;
+  Block *mapping = world->mappings[i];
+  while(mapping != NULL) {
+    if(strcmp(mapping->str_id, str_id) == 0) {return mapping;}
+
+    mapping = world->mappings[++i];
+  }
+  return NULL;
+}
+
 Block * world_block_get3i(World *world, Vector3i *pos)
 {
   Vector3i tmp;
@@ -327,47 +385,22 @@ void world_block_set3d(World *world, Vector3d *pos, Block *block)
   return world_block_set3i(world, &tmp, block);
 }
 
-void world_block_delete3i(World *world, Vector3i *pos)
-{
-  Vector3i tmp;
-  vec_copy3i(&tmp, pos);
-  if(pos->x < 0) {++tmp.x;}
-  if(pos->y < 0) {++tmp.y;}
-  if(pos->z < 0) {++tmp.z;}
-  vec_div3i(&tmp, &tmp, 16);
-  if(pos->x < 0) {--tmp.x;}
-  if(pos->y < 0) {--tmp.y;}
-  if(pos->z < 0) {--tmp.z;}
-  
-  int i = 0;
-  Chunk *chunk = world->chunks[i];
-  while(chunk != NULL) {
-    if(vec_equal3i(&chunk->pos, &tmp)) {
-      vec_mod3i(&tmp, pos, 16);
-      chunk_block_delete(chunk, &tmp);
-      return;
-    }
-    chunk = world->chunks[++i];
-  }
-}
-
-void world_block_delete3d(World *world, Vector3d *pos)
-{
-  Vector3i tmp;
-  vec_set3i(&tmp, (int64_t) floor(pos->x), (int64_t) floor(pos->y), (int64_t) floor(pos->z));
-  return world_block_delete3i(world, &tmp);
-}
-
 void world_draw(World *world)
 {
   mstack_push(mstack, mview_matrix);
   int i = 0;
   Chunk *chunk = world->chunks[i];
   while(chunk != NULL) {
-    matrix_translate(mview_matrix, 16.0*chunk->pos.x, 16.0*chunk->pos.y, 16.0*chunk->pos.z);
-    chunk_draw(chunk);
-    mstack_pick(mstack, mview_matrix, 0);
+    Vector3d tmp;
+    vec_set3d(&tmp, chunk->pos.x*-16.0, chunk->pos.y*-16.0, chunk->pos.z*-16.0);
+    vec_add3d(&tmp, &tmp, &world->entities[0]->pos);
+    if(sqrt((tmp.x*tmp.x)+(tmp.y*tmp.y)+(tmp.z*tmp.z)) > 100.0) {goto next;}
     
+    matrix_translate(mview_matrix, chunk->pos.x*16.0, chunk->pos.y*16.0, chunk->pos.z*16.0);
+    chunk_draw(chunk, world);
+    mstack_pick(mstack, mview_matrix, 0);
+
+  next:
     chunk = world->chunks[++i];
   }
   mstack_pop(mstack, mview_matrix);

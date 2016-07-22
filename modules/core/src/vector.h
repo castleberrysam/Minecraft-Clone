@@ -68,6 +68,20 @@ static inline void vec_add3d(Vector3d *out, Vector3d *left, Vector3d *right)
   out->z = left->z + right->z;
 }
 
+static inline void vec_sub3i(Vector3i *out, Vector3i *left, Vector3i *right)
+{
+  out->x = left->x - right->x;
+  out->y = left->y - right->y;
+  out->z = left->z - right->z;
+}
+
+static inline void vec_sub3d(Vector3i *out, Vector3i *left, Vector3i *right)
+{
+  out->x = left->x - right->x;
+  out->y = left->y - right->y;
+  out->z = left->z - right->z;
+}
+
 static inline void vec_scale3i(Vector3i *out, Vector3i *vec, int64_t scale)
 {
   out->x = vec->x * scale;

@@ -1,21 +1,21 @@
 #version 400 core
 
 uniform isamplerBuffer blocks;
-uniform mat4 mvp;
 layout(points) in;
 layout(triangle_strip, max_vertices=24) out;
-out vec4 pos;
-flat out int tex;
+out vec3 off;
+out vec3 pos;
+out int tex;
 
-const vec4 vertices[8] = vec4[](
-  vec4(0.0, 0.0, 0.0, 0.0), // 0
-  vec4(0.0, 0.0, 1.0, 0.0), // 1
-  vec4(0.0, 1.0, 0.0, 0.0), // 2
-  vec4(0.0, 1.0, 1.0, 0.0), // 3
-  vec4(1.0, 0.0, 0.0, 0.0), // 4
-  vec4(1.0, 0.0, 1.0, 0.0), // 5
-  vec4(1.0, 1.0, 0.0, 0.0), // 6
-  vec4(1.0, 1.0, 1.0, 0.0)  // 7
+const vec3 vertices[8] = vec3[](
+  vec3(0.0, 0.0, 0.0), // 0
+  vec3(0.0, 0.0, 1.0), // 1
+  vec3(0.0, 1.0, 0.0), // 2
+  vec3(0.0, 1.0, 1.0), // 3
+  vec3(1.0, 0.0, 0.0), // 4
+  vec3(1.0, 0.0, 1.0), // 5
+  vec3(1.0, 1.0, 0.0), // 6
+  vec3(1.0, 1.0, 1.0)  // 7
 );
 
 const int indices[24] = int[](
@@ -40,54 +40,54 @@ void main(void)
   if(current == -1) {return;}
   if(getblock(0,0,-1) == -1) {
     for(int i=0;i<4;++i) {
+      off = gl_in[0].gl_Position.xyz;
       pos = vertices[indices[i]];
       tex = current;
-      gl_Position = mvp * (gl_in[0].gl_Position + pos);
       EmitVertex();
     }
     EndPrimitive();
   }
   if(getblock(1,0,0) == -1) {
     for(int i=0;i<4;++i) {
+      off = gl_in[0].gl_Position.xyz;
       pos = vertices[indices[i+4]];
       tex = current;
-      gl_Position = mvp * (gl_in[0].gl_Position + pos);
       EmitVertex();
     }
     EndPrimitive();
   }
   if(getblock(0,0,1) == -1) {
     for(int i=0;i<4;++i) {
+      off = gl_in[0].gl_Position.xyz;
       pos = vertices[indices[i+8]];
       tex = current;
-      gl_Position = mvp * (gl_in[0].gl_Position + pos);
       EmitVertex();
     }
     EndPrimitive();
   }
   if(getblock(-1,0,0) == -1) {
     for(int i=0;i<4;++i) {
+      off = gl_in[0].gl_Position.xyz;
       pos = vertices[indices[i+12]];
       tex = current;
-      gl_Position = mvp * (gl_in[0].gl_Position + pos);
       EmitVertex();
     }
     EndPrimitive();
   }
   if(getblock(0,1,0) == -1) {
     for(int i=0;i<4;++i) {
+      off = gl_in[0].gl_Position.xyz;
       pos = vertices[indices[i+16]];
       tex = current;
-      gl_Position = mvp * (gl_in[0].gl_Position + pos);
       EmitVertex();
     }
     EndPrimitive();
   }
   if(getblock(0,-1,0) == -1) {
     for(int i=0;i<4;++i) {
+      off = gl_in[0].gl_Position.xyz;
       pos = vertices[indices[i+20]];
       tex = current;
-      gl_Position = mvp * (gl_in[0].gl_Position + pos);
       EmitVertex();
     }
     EndPrimitive();

@@ -1,26 +1,34 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <GL/glew.h>
-#include "chunk.h"
+#include "world.h"
 #include "shader.h"
 #include "matrix.h"
 #include "texture.h"
 
-static GLuint buffer = 0;
-static GLuint vao = 0;
-static GLuint program = 0;
+static GLuint buffer_regen = 0;
+static GLuint vao_regen = 0;
+static GLuint program_regen = 0;
+static GLuint vao_render = 0;
+static GLuint program_render = 0;
 
 void chunk_init(Chunk *chunk, Vector3i *pos)
 {
-  if(buffer == 0) {
-    GLuint shaders[3];
-    shaders[0] = load_shader("res/shader/chunk.vert", GL_VERTEX_SHADER);
-    shaders[1] = load_shader("res/shader/chunk.geom", GL_GEOMETRY_SHADER);
-    shaders[2] = load_shader("res/shader/chunk.frag", GL_FRAGMENT_SHADER);
-    program = compile_program(3, shaders);
+  if(buffer_regen == 0) {
+    GLuint shaders[2];
+    shaders[0] = load_shader("res/shader/chunk_regen.vert", GL_VERTEX_SHADER);
+    shaders[1] = load_shader("res/shader/chunk_regen.geom", GL_GEOMETRY_SHADER);
+    program_regen = compile_program(2, shaders);
+    char *varyings[3] = {"off", "pos", "tex"};
+    glTransformFeedbackVaryings(program_regen, 3, (const GLchar * const *) varyings, GL_INTERLEAVED_ATTRIBS);
+    glLinkProgram(program_regen);
+
+    shaders[0] = load_shader("res/shader/chunk_render.vert", GL_VERTEX_SHADER);
+    shaders[1] = load_shader("res/shader/chunk_render.frag", GL_FRAGMENT_SHADER);
+    program_render = compile_program(2, shaders);
     
-    glGenBuffers(1, &buffer);
-    glBindBuffer(GL_ARRAY_BUFFER, buffer);
+    glGenBuffers(1, &buffer_regen);
+    glBindBuffer(GL_ARRAY_BUFFER, buffer_regen);
     glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat)*3*4096, NULL, GL_STATIC_DRAW);
     GLfloat *data = glMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY);
     for(int x=0;x<16;++x) {
@@ -35,17 +43,23 @@ void chunk_init(Chunk *chunk, Vector3i *pos)
     }
     glUnmapBuffer(GL_ARRAY_BUFFER);
 
-    glGenVertexArrays(1, &vao);
+    glGenVertexArrays(1, &vao_regen);
+    glGenVertexArrays(1, &vao_render);
   }
   
-  chunk->blocks = malloc(sizeof(Block *) * 4096);
+  chunk->blocks = calloc(4096, sizeof(Block *));
   vec_copy3i(&chunk->pos, pos);
+  chunk->changed = true;
+  chunk->empty = true;
+  glGenBuffers(1, &chunk->buffer);
+  glGenTransformFeedbacks(1, &chunk->feedback);
 }
 
 void chunk_delete(Chunk *chunk)
 {
-  model_delete((Model *) chunk);
   free(chunk->blocks);
+  glDeleteBuffers(1, &chunk->buffer);
+  glDeleteTransformFeedbacks(1, &chunk->feedback);
 }
 
 inline Block * chunk_block_get(Chunk *chunk, Vector3i *pos)
@@ -57,32 +71,47 @@ inline Block * chunk_block_get(Chunk *chunk, Vector3i *pos)
 void chunk_block_set(Chunk *chunk, Vector3i *pos, Block *block)
 {
   int index = pos->x+(pos->y*16)+(pos->z*256);
+  chunk->changed = !block_equal(chunk->blocks[index], block);
   chunk->blocks[index] = block;
+
+  if(block == NULL) {
+    chunk->empty = true;
+    for(int i=0;i<4096;++i) {
+      if(chunk->blocks[i] != NULL) {
+	chunk->empty = false;
+	break;
+      }
+    }
+  } else {
+    chunk->empty = false;
+  }
 }
 
-void chunk_block_delete(Chunk *chunk, Vector3i *pos)
+static void chunk_regen_buffer(Chunk **adjacent)
 {
-  int index = pos->x+(pos->y*16)+(pos->z*256);
-  chunk->blocks[index] = NULL;
-}
-
-void chunk_draw(Chunk *chunk)
-{
+  Chunk *chunk = adjacent[13];
+  
   GLuint blocks, texbuf;
   glGenBuffers(1, &blocks);
   glBindBuffer(GL_TEXTURE_BUFFER, blocks);
   glBufferData(GL_TEXTURE_BUFFER, sizeof(GLint)*5832, NULL, GL_STREAM_DRAW);
   GLint *data = glMapBuffer(GL_TEXTURE_BUFFER, GL_WRITE_ONLY);
+
   for(int x=0;x<18;++x) {
     for(int y=0;y<18;++y) {
       for(int z=0;z<18;++z) {
-	int index1 = x+(y*18)+(z*324);
-	int index2 = (x-1)+((y-1)*16)+((z-1)*256);
-	if(x == 0 || x == 17 || y == 0 || y == 17 || z == 0 || z == 17) {
-	  data[index1] = -1;
-	} else {
-	  data[index1] = chunk->blocks[index2] == NULL ? -1 : chunk->blocks[index2]->texture;
-	}
+	int ix = x != 0 ? (x != 17 ? x-1 : 0) : 15;
+	int iy = y != 0 ? (y != 17 ? y-1 : 0) : 15;
+	int iz = z != 0 ? (z != 17 ? z-1 : 0) : 15;
+	int index = ix + (iy * 16) + (iz * 256);
+
+	int ic = 0;
+	ic += x != 0 ? (x != 17 ? 1 : 2) : 0;
+	ic += y != 0 ? (y != 17 ? 9 : 18) : 0;
+	ic += z != 0 ? (z != 17 ? 3 : 6) : 0;
+	
+	data[x+(y*18)+(z*324)] = adjacent[ic] != NULL ?
+	  (adjacent[ic]->blocks[index] != NULL ? adjacent[ic]->blocks[index]->texture : -1) : -1;
       }
     }
   }
@@ -92,22 +121,57 @@ void chunk_draw(Chunk *chunk)
   glBindTexture(GL_TEXTURE_BUFFER, texbuf);
   glTexBuffer(GL_TEXTURE_BUFFER, GL_R32I, blocks);
 
-  glUseProgram(program);
-  glUniform1i(glGetUniformLocation(program, "blocks"), 0);
-  glUniform1i(glGetUniformLocation(program, "textures"), 1);
-  glActiveTexture(GL_TEXTURE1);
-  glEnable(GL_TEXTURE_3D);
-  glBindTexture(GL_TEXTURE_CUBE_MAP_ARRAY, texture_array);
-  matrix_update_mvp(glGetUniformLocation(program, "mvp"));
-  glBindBuffer(GL_ARRAY_BUFFER, buffer);
-  glBindVertexArray(vao);
+  glUseProgram(program_regen);
+  glUniform1i(glGetUniformLocation(program_regen, "blocks"), 0);
+  glBindBuffer(GL_ARRAY_BUFFER, buffer_regen);
+  glBindVertexArray(vao_regen);
   glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (const GLvoid *) 0);
   glEnableVertexAttribArray(0);
-  glEnable(GL_DEPTH_TEST);
-  glDepthFunc(GL_LEQUAL);
 
+  glBindTransformFeedback(GL_TRANSFORM_FEEDBACK, chunk->feedback);
+  glBindBufferBase(GL_TRANSFORM_FEEDBACK_BUFFER, 0, chunk->buffer);
+  glBufferData(GL_TRANSFORM_FEEDBACK_BUFFER, 2048*6*6*((sizeof(GLfloat)*6)+sizeof(GLint)),
+	       NULL, GL_STATIC_COPY);
+
+  glEnable(GL_RASTERIZER_DISCARD);
+  glBeginTransformFeedback(GL_TRIANGLES);
   glDrawArrays(GL_POINTS, 0, 4096);
+  glEndTransformFeedback();
+  glDisable(GL_RASTERIZER_DISCARD);
 
   glDeleteBuffers(1, &blocks);
   glDeleteTextures(1, &texbuf);
+
+  chunk->changed = false;
+}
+
+void chunk_draw(Chunk *chunk, World *world)
+{
+  if(chunk->empty) {return;}
+  if(chunk->changed) {
+    Chunk *adjacent[27];
+    world_chunk_adjacent(world, chunk, adjacent);
+    chunk_regen_buffer(adjacent);
+  }
+  
+  glUseProgram(program_render);
+  glUniform1i(glGetUniformLocation(program_render, "textures"), 0);
+  glActiveTexture(GL_TEXTURE0);
+  glEnable(GL_TEXTURE_3D);
+  glBindTexture(GL_TEXTURE_CUBE_MAP_ARRAY, texture_array);
+  matrix_update_mvp(glGetUniformLocation(program_render, "mvp"));
+  glBindBuffer(GL_ARRAY_BUFFER, chunk->buffer);
+  glBindVertexArray(vao_render);
+  glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, (sizeof(GLfloat)*6)+sizeof(GLint), (const GLvoid *) 0);
+  glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, (sizeof(GLfloat)*6)+sizeof(GLint),
+			(const GLvoid *) (sizeof(GLfloat)*3));
+  glVertexAttribIPointer(2, 1, GL_INT, (sizeof(GLfloat)*6)+sizeof(GLint),
+			 (const GLvoid *) (sizeof(GLfloat)*6));
+  glEnableVertexAttribArray(0);
+  glEnableVertexAttribArray(1);
+  glEnableVertexAttribArray(2);
+
+  glEnable(GL_DEPTH_TEST);
+  glDepthFunc(GL_LEQUAL);
+  glDrawTransformFeedback(GL_TRIANGLES, chunk->feedback);
 }

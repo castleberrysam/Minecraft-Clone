@@ -78,6 +78,8 @@ static void display(GLFWwindow *window)
 
   glClearColor(0x87/255.0, 0xce/255.0, 0xfa/255.0, 1.0);
   glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
+  glEnable(GL_CULL_FACE);
+  glCullFace(GL_BACK);
   
   matrix_identity(mview_matrix);
   matrix_rotate_x(mview_matrix, RADS(player->apos.x));
@@ -137,7 +139,7 @@ static void click(GLFWwindow *window, int button, int action, int modifiers)
   Game *game = glfwGetWindowUserPointer(window);
   if(!selecting) {return;}
   if(button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS) {
-    world_block_delete3d(game->worlds[0], &trace);
+    world_block_set3d(game->worlds[0], &trace, NULL);
   } else if(button == GLFW_MOUSE_BUTTON_RIGHT && action == GLFW_PRESS) {
     Vector3d tmp;
     switch(side) {
@@ -232,10 +234,12 @@ int main(void)
     return 1;
   }
 
-#ifdef DEBUG
-  glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
-  glDebugMessageControl(GL_DONT_CARE, GL_DONT_CARE, GL_DONT_CARE, 0, NULL, GL_TRUE);
-  glDebugMessageCallback((GLDEBUGPROC) glerror, NULL);
+#ifdef DEBUG_GRAPHICS
+  if(GLEW_VERSION_4_3) {
+    glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
+    glDebugMessageControl(GL_DONT_CARE, GL_DONT_CARE, GL_DONT_CARE, 0, NULL, GL_TRUE);
+    glDebugMessageCallback((GLDEBUGPROC) glerror, NULL);
+  }
 #endif
 
   glfwSetFramebufferSizeCallback(window, reshape);
@@ -288,21 +292,21 @@ int main(void)
     
     block = blocks[++num_mappings];
   }
+  
+  for(double x=-5.5;x<7.0;++x) {
+    for(double y=-5.5;y<7.0;++y) {
+      for(double z=-5.5;z<7.0;++z) {
+	Vector3d tmp;
+	vec_set3d(&tmp, x+floor(player->pos.x/16), y+floor(player->pos.y/16), z+floor(player->pos.z/16));
+	world_chunk_gen3d(world, &tmp, num_mappings);
+      }
+    }
+  }
 
   uint64_t frame = 0;
   while(!glfwWindowShouldClose(window)) {
     struct timespec start, finish, begin, end;
     clock_gettime(CLOCK_REALTIME, &start);
-
-    for(double x=-0.5;x<2.0;++x) {
-      for(double y=-0.5;y<2.0;++y) {
-	for(double z=-0.5;z<2.0;++z) {
-	  Vector3d tmp;
-	  vec_set3d(&tmp, x+floor(player->pos.x/16), y+floor(player->pos.y/16), z+floor(player->pos.z/16));
-	  world_chunk_gen3d(world, &tmp, num_mappings);
-	}
-      }
-    }
 
     clock_gettime(CLOCK_REALTIME, &begin);
     display(window);
@@ -387,7 +391,7 @@ int main(void)
 #ifdef DEBUG_GRAPHICS
     GLenum error = glGetError();
     while(error != GL_NO_ERROR) {
-      fprintf(stderr, "[GRAPH] gl error: %s\n", gluErrorString(error));
+      fprintf(stderr, "[INIT ] gl error: %s\n", gluErrorString(error));
       error = glGetError();
     }
 #endif

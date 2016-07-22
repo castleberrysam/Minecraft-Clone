@@ -376,26 +376,27 @@ void world_block_set3i(World *world, Vector3i *pos, Block *block)
     if(vec_equal3i(&chunk->pos, &cpos)) {
       vec_mod3i(&bpos, pos, 16);
       chunk_block_set(chunk, &bpos, block);
+      Vector3i tmp;
       if(bpos.x == 0) {
-	vec_set3i(&cpos, cpos.x-1, cpos.y, cpos.z);
-	world_chunk_regen_buffer(world, &cpos);
+	vec_set3i(&tmp, cpos.x-1, cpos.y, cpos.z);
+	world_chunk_regen_buffer(world, &tmp);
       } else if(bpos.x == 15) {
-	vec_set3i(&cpos, cpos.x+1, cpos.y, cpos.z);
-	world_chunk_regen_buffer(world, &cpos);
+	vec_set3i(&tmp, cpos.x+1, cpos.y, cpos.z);
+	world_chunk_regen_buffer(world, &tmp);
       }
       if(bpos.y == 0) {
-	vec_set3i(&cpos, cpos.x, cpos.y-1, cpos.z);
-	world_chunk_regen_buffer(world, &cpos);
+	vec_set3i(&tmp, cpos.x, cpos.y-1, cpos.z);
+	world_chunk_regen_buffer(world, &tmp);
       } else if(bpos.y == 15) {
-	vec_set3i(&cpos, cpos.x, cpos.y+1, cpos.z);
-	world_chunk_regen_buffer(world, &cpos);
+	vec_set3i(&tmp, cpos.x, cpos.y+1, cpos.z);
+	world_chunk_regen_buffer(world, &tmp);
       }
       if(bpos.z == 0) {
-	vec_set3i(&cpos, cpos.x, cpos.y, cpos.z-1);
-	world_chunk_regen_buffer(world, &cpos);
+	vec_set3i(&tmp, cpos.x, cpos.y, cpos.z-1);
+	world_chunk_regen_buffer(world, &tmp);
       } else if(bpos.z == 15) {
-	vec_set3i(&cpos, cpos.x, cpos.y, cpos.z+1);
-	world_chunk_regen_buffer(world, &cpos);
+	vec_set3i(&tmp, cpos.x, cpos.y, cpos.z+1);
+	world_chunk_regen_buffer(world, &tmp);
       }
       return;
     }

@@ -1,7 +1,7 @@
 LIN_CC = gcc
 WIN_CC = i686-w64-mingw32-gcc
 OSX_CC = 
-LIN_LIBS = -lGL -lGLU -lGLEW -lglfw -lpng -lfreetype -lm -lcore
+LIN_LIBS = -lGL -lGLU -lGLEW -lglfw -lpng -lfreetype -lm -lopenal -lvorbisfile -lcore
 WIN_LIBS = -lopengl32 -lglu32 -lglew32.dll -lglfw3dll -lpng16 -lfreetype.dll -lm -lcore
 OSX_LIBS = 
 LIN_BIN = game

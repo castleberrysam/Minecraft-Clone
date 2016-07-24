@@ -26,6 +26,8 @@ int clock_gettime(int clk_id, struct timespec *t) {
 #include "font.h"
 #include "module.h"
 #include "matrix.h"
+#include "shader.h"
+#include "sound.h"
 
 static const double MOUSE_SENS = 0.1;
 static double lastx = 0.0;
@@ -54,6 +56,8 @@ static int num_mappings = 0;
 static int current_block = 0;
 
 static GLuint program_points;
+
+static Sound sound_break;
 
 #ifdef DEBUG_GRAPHICS
 static void glerror(GLenum source, GLenum type, GLuint id, GLenum severity,
@@ -145,7 +149,7 @@ static void mouse(GLFWwindow *window, double x, double y)
   rot->x = rot->x > 90.0 ? 90.0 : (rot->x < -90.0 ? -90.0 : rot->x);
   lastx = x;
   lasty = y;
-#ifdef DEBUG
+#ifdef DEBUG_INPUT
   fprintf(stderr, "[MOUSE] x %.2f, y %.2f, xrot %.2f, yrot %.2f\n", x, y, rot->x, rot->y);
 #endif
 }
@@ -156,6 +160,7 @@ static void click(GLFWwindow *window, int button, int action, int modifiers)
   if(!selecting) {return;}
   if(button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS) {
     world_block_set3d(game->worlds[0], &trace, NULL);
+    sound_play_static(&sound_break, &trace);
   } else if(button == GLFW_MOUSE_BUTTON_RIGHT && action == GLFW_PRESS) {
     Vector3d tmp;
     switch(side) {
@@ -206,7 +211,7 @@ static void keyboard(GLFWwindow *window, int key, int scancode, int action, int 
     }
     break;
   }
-#ifdef DEBUG
+#ifdef DEBUG_INPUT
   fprintf(stderr, "[KEYBD] key %d, scan %d, action %d, mod %d\n", key, scancode, action, modifiers);
 #endif
 }
@@ -324,6 +329,8 @@ int main(void)
     }
   }
 
+  sound_init(&sound_break, "res/break.ogg");
+
   uint64_t frame = 0;
   while(!glfwWindowShouldClose(window)) {
     struct timespec start, finish, begin, end;
@@ -392,22 +399,38 @@ int main(void)
     }
 
     clock_gettime(CLOCK_REALTIME, &begin);
-#ifdef DEBUG
+#ifdef DEBUG_PHYSICS
     int cycles = 0;
 #endif
     double t = 0.0;
     while(t < (1.0/fps)) {
       t += phys_update(world, (1.0/fps) - t);
-#ifdef DEBUG
+#ifdef DEBUG_PHYSICS
       ++cycles;
 #endif
     }
-#ifdef DEBUG
+#ifdef DEBUG_PHYSICS
     fprintf(stderr, "[INIT ] physics took %d cycles\n", cycles);
 #endif
     clock_gettime(CLOCK_REALTIME, &end);
     end.tv_nsec += (end.tv_sec - begin.tv_sec) * 1000000000;
     long tphysics = (end.tv_nsec - begin.tv_nsec) / 1000;
+
+    alListener3f(AL_POSITION, player->pos.x, player->pos.y, player->pos.z);
+    alListener3f(AL_VELOCITY, player->vel.x, player->vel.y, player->vel.z);
+
+    ALfloat listener_rot[6];
+    double fx = RADS(-player->apos.x);
+    double fy = RADS(player->apos.y);
+    double ax = RADS(90-player->apos.x);
+    double ay = fy;
+    listener_rot[0] = sin(fy) * cos(fx);
+    listener_rot[1] = sin(fx);
+    listener_rot[2] = -cos(fy) * cos(fx);
+    listener_rot[3] = sin(ay) * cos(ax);
+    listener_rot[4] = sin(ax);
+    listener_rot[5] = -cos(ay) * cos(ax);
+    alListenerfv(AL_ORIENTATION, listener_rot);
     
 #ifdef DEBUG_GRAPHICS
     GLenum error = glGetError();
@@ -416,15 +439,38 @@ int main(void)
       error = glGetError();
     }
 #endif
+#ifdef DEBUG
+    switch(alGetError()) {
+    case AL_NO_ERROR:
+      break;
+    case AL_INVALID_NAME:
+      fprintf(stderr, "[INIT ] al error: invalid name\n");
+      break;
+    case AL_INVALID_ENUM:
+      fprintf(stderr, "[INIT ] al error: invalid enum\n");
+      break;
+    case AL_INVALID_VALUE:
+      fprintf(stderr, "[INIT ] al error: invalid value\n");
+      break;
+    case AL_INVALID_OPERATION:
+      fprintf(stderr, "[INIT ] al error: invalid operation\n");
+      break;
+    case AL_OUT_OF_MEMORY:
+      fprintf(stderr, "[INIT ] al error: out of memory\n");
+      break;
+    }
+#endif
     
     clock_gettime(CLOCK_REALTIME, &finish);
     finish.tv_nsec += (finish.tv_sec - start.tv_sec) * 1000000000;
     long ttotal = (finish.tv_nsec - start.tv_nsec) / 1000;
     fps = MIN(1000000/ttotal, FPS_LIM);
+    /*
 #ifdef DEBUG
     fprintf(stderr, "[INIT ] graphics %d, physics %d, total %d (%d fps)\n",
 	    (int) trender, (int) tphysics, (int) ttotal, fps);
 #endif
+    */
 
     if(frame > 120) {
       trender_max = MAX(trender_max, trender);
@@ -446,6 +492,7 @@ int main(void)
   module_delete(&terrain);
   game_delete(game);
   free(game);
+  sound_cleanup_lib();
   glfwTerminate();
   
   return 0;

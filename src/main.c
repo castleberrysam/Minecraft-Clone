@@ -247,7 +247,7 @@ int main(void)
   }
   if(!GLEW_VERSION_4_0) {
 #ifdef DEBUG
-    fprintf(stderr, "[INIT ] context does not support OpenGl 4.0\n");
+    fprintf(stderr, "[INIT ] context does not support OpenGL 4.0\n");
 #endif
     return 1;
   }
@@ -326,7 +326,7 @@ int main(void)
     }
   }
 
-  sound_init(&sound_break, "res/break.ogg");
+  sound_init(&sound_break, "res/break.ogg", 1.0, 0.5);
 
   uint64_t frame = 0;
   while(!glfwWindowShouldClose(window)) {
@@ -344,28 +344,28 @@ int main(void)
     selecting = phys_trace(world, player, 5.0, &trace);
     side = block_side_get(&trace);
 
-    if(phys_is_grounded(world, player)) {
-      if(player->vel.x >= FRICTION) {
-	player->vel.x -= FRICTION;
-      } else if(player->vel.x > 0.0) {
-	player->vel.x = 0.0;
-      } else if(player->vel.x <= -FRICTION) {
-	player->vel.x += FRICTION;
-      } else {
-	player->vel.x = 0.0;
-      }
-      if(player->vel.z >= FRICTION) {
-	player->vel.z -= FRICTION;
-      } else if(player->vel.z > 0.0) {
-	player->vel.z = 0.0;
-      } else if(player->vel.z <= -FRICTION) {
-	player->vel.z += FRICTION;
-      } else {
-	player->vel.z = 0.0;
-      }
-    } else {
+    if(!phys_is_grounded(world, player)) {
       player->vel.y -= 9.81/fps;
     }
+    if(player->vel.x >= FRICTION) {
+      player->vel.x -= FRICTION;
+    } else if(player->vel.x > 0.0) {
+      player->vel.x = 0.0;
+    } else if(player->vel.x <= -FRICTION) {
+      player->vel.x += FRICTION;
+    } else {
+      player->vel.x = 0.0;
+    }
+    if(player->vel.z >= FRICTION) {
+      player->vel.z -= FRICTION;
+    } else if(player->vel.z > 0.0) {
+      player->vel.z = 0.0;
+    } else if(player->vel.z <= -FRICTION) {
+      player->vel.z += FRICTION;
+    } else {
+      player->vel.z = 0.0;
+    }
+    
     if(glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {
       player->vel.x = sin(RADS(player->apos.y)) * MOVE_VEL;
       player->vel.z = -cos(RADS(player->apos.y)) * MOVE_VEL;

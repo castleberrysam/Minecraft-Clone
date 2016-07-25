@@ -32,7 +32,7 @@ void sound_cleanup_lib(void)
   alcCloseDevice(device);
 }
 
-bool sound_init(Sound *sound, char *filepath)
+bool sound_init(Sound *sound, char *filepath, double pitch, double gain)
 {
   if(device == NULL) {prepare_lib();}
   
@@ -74,6 +74,9 @@ bool sound_init(Sound *sound, char *filepath)
   alGenBuffers(1, &sound->buffer);
   alBufferData(sound->buffer, AL_FORMAT_MONO16, data, num_total, sound->info->rate);
   free(data);
+
+  sound->pitch = pitch;
+  sound->gain = gain;
   
   return true;
 }
@@ -106,5 +109,7 @@ void sound_play_static(Sound *sound, Vector3d *pos)
   
   alSource3f(source, AL_POSITION, pos->x, pos->y, pos->z);
   alSourcei(source, AL_BUFFER, sound->buffer);
+  alSourcef(source, AL_PITCH, sound->pitch);
+  alSourcef(source, AL_GAIN, sound->gain);
   alSourcePlay(source);
 }

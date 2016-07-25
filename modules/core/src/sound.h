@@ -11,10 +11,12 @@ typedef struct Sound {
   ALuint buffer;
   OggVorbis_File *file;
   vorbis_info *info;
+  double pitch;
+  double gain;
 } Sound;
 
 void sound_cleanup_lib(void);
-bool sound_init(Sound *sound, char *filepath);
+bool sound_init(Sound *sound, char *filepath, double pitch, double gain);
 void sound_delete(Sound *sound);
 void sound_play_static(Sound *sound, Vector3d *pos);
 

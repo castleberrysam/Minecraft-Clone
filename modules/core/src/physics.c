@@ -167,7 +167,11 @@ double phys_update(World *world, double tmax)
 	if((block = phys_intersect_x(world, entity, tx, &where)) != NULL) {
 	  t = tx2;
 	  block->collide(world, entity, &where);
-	  entity->vel.x = 0.0;
+	  if(entity->old_vel.x > 0.0) {
+	    entity->vel.x = MIN(entity->vel.x, 0.0);
+	  } else {
+	    entity->vel.x = MAX(entity->vel.x, 0.0);
+	  }
 	  goto next;
 	}
 	t = tx;
@@ -175,7 +179,11 @@ double phys_update(World *world, double tmax)
 	if((block = phys_intersect_y(world, entity, ty, &where)) != NULL) {
 	  t = ty2;
 	  block->collide(world, entity, &where);
-	  entity->vel.y = 0.0;
+	  if(entity->old_vel.y > 0.0) {
+	    entity->vel.y = MIN(entity->vel.y, 0.0);
+	  } else {
+	    entity->vel.y = MAX(entity->vel.y, 0.0);
+	  }
 	  goto next;
 	}
 	t = ty;
@@ -183,7 +191,11 @@ double phys_update(World *world, double tmax)
 	if((block = phys_intersect_z(world, entity, tz, &where)) != NULL) {
 	  t = tz2;
 	  block->collide(world, entity, &where);
-	  entity->vel.z = 0.0;
+	  if(entity->old_vel.z > 0.0) {
+	    entity->vel.z = MIN(entity->vel.z, 0.0);
+	  } else {
+	    entity->vel.z = MAX(entity->vel.z, 0.0);
+	  }
 	  goto next;
 	}
 	t = tz;
@@ -192,7 +204,11 @@ double phys_update(World *world, double tmax)
 	if((block = phys_intersect_x(world, entity, tx, &where)) != NULL) {
 	  t = tx2;
 	  block->collide(world, entity, &where);
-	  entity->vel.x = 0.0;
+	  if(entity->old_vel.x > 0.0) {
+	    entity->vel.x = MIN(entity->vel.x, 0.0);
+	  } else {
+	    entity->vel.x = MAX(entity->vel.x, 0.0);
+	  }
 	  goto next;
 	}
 	t = tx;
@@ -200,7 +216,11 @@ double phys_update(World *world, double tmax)
 	if((block = phys_intersect_z(world, entity, tz, &where)) != NULL) {
 	  t = tz2;
 	  block->collide(world, entity, &where);
-	  entity->vel.z = 0.0;
+	  if(entity->old_vel.z > 0.0) {
+	    entity->vel.z = MIN(entity->vel.z, 0.0);
+	  } else {
+	    entity->vel.z = MAX(entity->vel.z, 0.0);
+	  }
 	  goto next;
 	}
 	t = tz;
@@ -208,7 +228,11 @@ double phys_update(World *world, double tmax)
 	if((block = phys_intersect_y(world, entity, ty, &where)) != NULL) {
 	  t = ty2;
 	  block->collide(world, entity, &where);
-	  entity->vel.y = 0.0;
+	  if(entity->old_vel.y > 0.0) {
+	    entity->vel.y = MIN(entity->vel.y, 0.0);
+	  } else {
+	    entity->vel.y = MAX(entity->vel.y, 0.0);
+	  }
 	  goto next;
 	}
 	t = ty;
@@ -217,7 +241,11 @@ double phys_update(World *world, double tmax)
 	if((block = phys_intersect_z(world, entity, tz, &where)) != NULL) {
 	  t = tz2;
 	  block->collide(world, entity, &where);
-	  entity->vel.z = 0.0;
+	  if(entity->old_vel.z > 0.0) {
+	    entity->vel.z = MIN(entity->vel.z, 0.0);
+	  } else {
+	    entity->vel.z = MAX(entity->vel.z, 0.0);
+	  }
 	  goto next;
 	}
 	t = tz;
@@ -225,7 +253,11 @@ double phys_update(World *world, double tmax)
 	if((block = phys_intersect_x(world, entity, tx, &where)) != NULL) {
 	  t = tx2;
 	  block->collide(world, entity, &where);
-	  entity->vel.x = 0.0;
+	  if(entity->old_vel.x > 0.0) {
+	    entity->vel.x = MIN(entity->vel.x, 0.0);
+	  } else {
+	    entity->vel.x = MAX(entity->vel.x, 0.0);
+	  }
 	  goto next;
 	}
 	t = tx;
@@ -233,7 +265,11 @@ double phys_update(World *world, double tmax)
 	if((block = phys_intersect_y(world, entity, ty, &where)) != NULL) {
 	  t = ty2;
 	  block->collide(world, entity, &where);
-	  entity->vel.y = 0.0;
+	  if(entity->old_vel.y > 0.0) {
+	    entity->vel.y = MIN(entity->vel.y, 0.0);
+	  } else {
+	    entity->vel.y = MAX(entity->vel.y, 0.0);
+	  }
 	  goto next;
 	}
 	t = ty;
@@ -244,7 +280,11 @@ double phys_update(World *world, double tmax)
 	if((block = phys_intersect_y(world, entity, ty, &where)) != NULL) {
 	  t = ty2;
 	  block->collide(world, entity, &where);
-	  entity->vel.y = 0.0;
+	  if(entity->old_vel.y > 0.0) {
+	    entity->vel.y = MIN(entity->vel.y, 0.0);
+	  } else {
+	    entity->vel.y = MAX(entity->vel.y, 0.0);
+	  }
 	  goto next;
 	}
 	t = ty;
@@ -252,7 +292,11 @@ double phys_update(World *world, double tmax)
 	if((block = phys_intersect_x(world, entity, tx, &where)) != NULL) {
 	  t = tx2;
 	  block->collide(world, entity, &where);
-	  entity->vel.x = 0.0;
+	  if(entity->old_vel.x > 0.0) {
+	    entity->vel.x = MIN(entity->vel.x, 0.0);
+	  } else {
+	    entity->vel.x = MAX(entity->vel.x, 0.0);
+	  }
 	  goto next;
 	}
 	t = tx;
@@ -260,7 +304,11 @@ double phys_update(World *world, double tmax)
 	if((block = phys_intersect_z(world, entity, tz, &where)) != NULL) {
 	  t = tz2;
 	  block->collide(world, entity, &where);
-	  entity->vel.z = 0.0;
+	  if(entity->old_vel.z > 0.0) {
+	    entity->vel.z = MIN(entity->vel.z, 0.0);
+	  } else {
+	    entity->vel.z = MAX(entity->vel.z, 0.0);
+	  }
 	  goto next;
 	}
 	t = tz;
@@ -269,7 +317,11 @@ double phys_update(World *world, double tmax)
 	if((block = phys_intersect_y(world, entity, ty, &where)) != NULL) {
 	  t = ty2;
 	  block->collide(world, entity, &where);
-	  entity->vel.y = 0.0;
+	  if(entity->old_vel.y > 0.0) {
+	    entity->vel.y = MIN(entity->vel.y, 0.0);
+	  } else {
+	    entity->vel.y = MAX(entity->vel.y, 0.0);
+	  }
 	  goto next;
 	}
 	t = ty;
@@ -277,7 +329,11 @@ double phys_update(World *world, double tmax)
 	if((block = phys_intersect_z(world, entity, tz, &where)) != NULL) {
 	  t = tz2;
 	  block->collide(world, entity, &where);
-	  entity->vel.z = 0.0;
+	  if(entity->old_vel.z > 0.0) {
+	    entity->vel.z = MIN(entity->vel.z, 0.0);
+	  } else {
+	    entity->vel.z = MAX(entity->vel.z, 0.0);
+	  }
 	  goto next;
 	}
 	t = tz;
@@ -285,7 +341,11 @@ double phys_update(World *world, double tmax)
 	if((block = phys_intersect_x(world, entity, tx, &where)) != NULL) {
 	  t = tx2;
 	  block->collide(world, entity, &where);
-	  entity->vel.x = 0.0;
+	  if(entity->old_vel.x > 0.0) {
+	    entity->vel.x = MIN(entity->vel.x, 0.0);
+	  } else {
+	    entity->vel.x = MAX(entity->vel.x, 0.0);
+	  }
 	  goto next;
 	}
 	t = tx;
@@ -294,7 +354,11 @@ double phys_update(World *world, double tmax)
 	if((block = phys_intersect_z(world, entity, tz, &where)) != NULL) {
 	  t = tz2;
 	  block->collide(world, entity, &where);
-	  entity->vel.z = 0.0;
+	  if(entity->old_vel.z > 0.0) {
+	    entity->vel.z = MIN(entity->vel.z, 0.0);
+	  } else {
+	    entity->vel.z = MAX(entity->vel.z, 0.0);
+	  }
 	  goto next;
 	}
 	t = tz;
@@ -302,7 +366,11 @@ double phys_update(World *world, double tmax)
 	if((block = phys_intersect_y(world, entity, ty, &where)) != NULL) {
 	  t = ty2;
 	  block->collide(world, entity, &where);
-	  entity->vel.y = 0.0;
+	  if(entity->old_vel.y > 0.0) {
+	    entity->vel.y = MIN(entity->vel.y, 0.0);
+	  } else {
+	    entity->vel.y = MAX(entity->vel.y, 0.0);
+	  }
 	  goto next;
 	}
 	t = ty;
@@ -310,7 +378,11 @@ double phys_update(World *world, double tmax)
 	if((block = phys_intersect_x(world, entity, tx, &where)) != NULL) {
 	  t = tx2;
 	  block->collide(world, entity, &where);
-	  entity->vel.x = 0.0;
+	  if(entity->old_vel.x > 0.0) {
+	    entity->vel.x = MIN(entity->vel.x, 0.0);
+	  } else {
+	    entity->vel.x = MAX(entity->vel.x, 0.0);
+	  }
 	  goto next;
 	}
 	t = tx;

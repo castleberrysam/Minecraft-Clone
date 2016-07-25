@@ -2,8 +2,10 @@
 #include <tinydir.h>
 #include "texture.h"
 #include "block.h"
+#include "sound.h"
 
 static Block **blocks = NULL;
+static Sound sound_bounce;
 
 char * module_get_name(void)
 {
@@ -25,8 +27,17 @@ Block ** module_get_blocks(void)
   return blocks;
 }
 
+static void collide_bounce(World *world, Entity *entity, Vector3d *pos)
+{
+  if(block_side_get(pos) != TOP || entity->vel.y > -0.1) {return;}
+  entity->vel.y *= -1.1;
+  sound_play_static(&sound_bounce, pos);
+}
+
 __attribute__((constructor)) void load(void)
 {
+  sound_init(&sound_bounce, "modules/terrain/res/bounce.ogg", 1.0, 1.0);
+  
   int num_blocks = 1;
   blocks = malloc(num_blocks*sizeof(Block *));
   blocks[num_blocks-1] = NULL;
@@ -53,6 +64,9 @@ __attribute__((constructor)) void load(void)
     str_id[strlen(str_id)-4] = '\0';
     Block *block = malloc(sizeof(Block));
     block_init(block, texture, str_id, str_id, false);
+    if(strcmp(str_id, "block_trampoline") == 0) {
+      block->collide = collide_bounce;
+    }
     
     ++num_blocks;
     blocks = realloc(blocks, num_blocks*sizeof(Block *));

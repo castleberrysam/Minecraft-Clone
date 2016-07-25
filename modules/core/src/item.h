@@ -4,7 +4,7 @@
 #include "block.h"
 #include <stdint.h>
 
-typedef struct {
+typedef struct Item {
   uint32_t quantity;
   Block *block;
 } Item;

@@ -4,7 +4,7 @@
 #include <GL/glew.h>
 #include <stdbool.h>
 
-typedef struct {
+typedef struct MatrixStack {
   GLfloat **matrices;
   int max;
   int depth;

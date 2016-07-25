@@ -4,7 +4,7 @@
 #include "world.h"
 #include <stdbool.h>
 
-typedef struct {
+typedef struct Game {
   World **worlds;
 } Game;
 

@@ -6,7 +6,7 @@
 #include "block.h"
 #include <stdbool.h>
 
-typedef struct {
+typedef struct Chunk {
   // in order of row majority: x, y, z
   Block **blocks;
   Vector3i pos;
@@ -16,7 +16,7 @@ typedef struct {
   bool empty;
 } Chunk;
 
-typedef struct {
+typedef struct World {
   Chunk **chunks;
   Entity **entities;
   Block **mappings;

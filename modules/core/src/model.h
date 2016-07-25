@@ -4,7 +4,7 @@
 #include "vector.h"
 #include <GL/glew.h>
 
-typedef struct {
+typedef struct Model {
   GLuint buffer;
   GLuint vao;
   GLuint program;

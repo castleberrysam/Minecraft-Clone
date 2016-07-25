@@ -13,7 +13,7 @@ typedef Model ** (*get_m_arr_func)(void);
 typedef Entity ** (*get_e_arr_func)(void);
 typedef Action ** (*get_a_arr_func)(void);
 
-typedef struct {
+typedef struct Module {
   void *library;
   bool loaded;
   char *filename;

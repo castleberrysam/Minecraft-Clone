@@ -26,7 +26,7 @@ static double phys_time_intersect(double pos, double vel)
   }
 }
 
-static bool phys_intersect(World *world, Vector3d *pos, Vector3d *vel, double t, Vector3d *where)
+static Block * phys_intersect(World *world, Vector3d *pos, Vector3d *vel, double t, Vector3d *where)
 {
   Vector3d tmp;
   if(where == NULL) {where = &tmp;}
@@ -34,14 +34,14 @@ static bool phys_intersect(World *world, Vector3d *pos, Vector3d *vel, double t,
   vec_scale3d(where, where, t);
   vec_add3d(where, where, pos);
   Block *block = world_block_get3d(world, where);
-#ifdef DEBUG
+#ifdef DEBUG_PHYSICS
   fprintf(stderr, "[PHYS ] checking intersect with block %p <%d, %d, %d>\n",
 	  block, (int) floor(where->x), (int) floor(where->y), (int) floor(where->z));
 #endif
-  return block != NULL;
+  return block;
 }
 
-static bool phys_intersect_x(World *world, Entity *entity, double t)
+static Block * phys_intersect_x(World *world, Entity *entity, double t, Vector3d *where)
 {
   Vector3d pos, tmp;
   vec_copy3d(&pos, &entity->pos);
@@ -57,21 +57,22 @@ static bool phys_intersect_x(World *world, Entity *entity, double t)
       vec_copy3d(&tmp, &pos);
       tmp.y += y;
       tmp.z += z;
-      if(phys_intersect(world, &tmp, &entity->vel, t, NULL)) {
-#ifdef DEBUG
+      Block *block = phys_intersect(world, &tmp, &entity->vel, t, where);
+      if(block != NULL) {
+#ifdef DEBUG_PHYSICS
 	fprintf(stderr, "[PHYS ] collision on x\n");
 #endif
-	return true;
+	return block;
       }
     }
   }
-#ifdef DEBUG
+#ifdef DEBUG_PHYSICS
   fprintf(stderr, "[PHYS ] no collision on x\n");
 #endif
-  return false;
+  return NULL;
 }
 
-static bool phys_intersect_y(World *world, Entity *entity, double t)
+static Block * phys_intersect_y(World *world, Entity *entity, double t, Vector3d *where)
 {
   Vector3d pos, tmp;
   vec_copy3d(&pos, &entity->pos);
@@ -87,21 +88,22 @@ static bool phys_intersect_y(World *world, Entity *entity, double t)
       vec_copy3d(&tmp, &pos);
       tmp.x += x;
       tmp.z += z;
-      if(phys_intersect(world, &tmp, &entity->vel, t, NULL)) {
-#ifdef DEBUG
+      Block *block = phys_intersect(world, &tmp, &entity->vel, t, where);
+      if(block != NULL) {
+#ifdef DEBUG_PHYSICS
 	fprintf(stderr, "[PHYS ] collision on y\n");
 #endif
-	return true;
+	return block;
       }
     }
   }
-#ifdef DEBUG
+#ifdef DEBUG_PHYSICS
   fprintf(stderr, "[PHYS ] no collision on y\n");
 #endif
-  return false;
+  return NULL;
 }
 
-static bool phys_intersect_z(World *world, Entity *entity, double t)
+static Block * phys_intersect_z(World *world, Entity *entity, double t, Vector3d *where)
 {
   Vector3d pos, tmp;
   vec_copy3d(&pos, &entity->pos);
@@ -117,18 +119,19 @@ static bool phys_intersect_z(World *world, Entity *entity, double t)
       vec_copy3d(&tmp, &pos);
       tmp.x += x;
       tmp.y += y;
-      if(phys_intersect(world, &tmp, &entity->vel, t, NULL)) {
-#ifdef DEBUG
+      Block *block = phys_intersect(world, &tmp, &entity->vel, t, where);
+      if(block != NULL) {
+#ifdef DEBUG_PHYSICS
 	fprintf(stderr, "[PHYS ] collision on z\n");
 #endif
-	return true;
+	return block;
       }
     }
   }
-#ifdef DEBUG
+#ifdef DEBUG_PHYSICS
   fprintf(stderr, "[PHYS ] no collision on z\n");
 #endif
-  return false;
+  return NULL;
 }
 
 double phys_update(World *world, double tmax)
@@ -141,7 +144,7 @@ double phys_update(World *world, double tmax)
     double x = entity->pos.x + entity->bb_off.x + (entity->vel.x > 0 ? entity->bb_dim.x : -entity->bb_dim.x);
     double y = entity->pos.y + entity->bb_off.y + (entity->vel.y > 0 ? entity->bb_dim.y : -entity->bb_dim.y);
     double z = entity->pos.z + entity->bb_off.z + (entity->vel.z > 0 ? entity->bb_dim.z : -entity->bb_dim.z);
-#ifdef DEBUG
+#ifdef DEBUG_PHYSICS
     fprintf(stderr, "[PHYS ] entity %p has pos <%.2f, %.2f, %.2f> and vel <%.2f, %.2f, %.2f>\n",
 	    entity, x, y, z,
 	    entity->vel.x, entity->vel.y, entity->vel.z);
@@ -152,73 +155,84 @@ double phys_update(World *world, double tmax)
     double tx2 = phys_time_intersect(x, entity->vel.x);
     double ty2 = phys_time_intersect(y, entity->vel.y);
     double tz2 = phys_time_intersect(z, entity->vel.z);
-#ifdef DEBUG
+#ifdef DEBUG_PHYSICS
     fprintf(stderr, "[PHYS ] has intersection times <%.4f, %.4f, %.4f>\n",
 	    tx > t ? t : tx, ty > t ? t : ty, tz > t ? t : tz);
 #endif
+    Block *block;
+    Vector3d where;
     if(tx < ty) {
       if(ty < tz) { // tx, ty, tz
 	if(tx2 > t) {goto next;}
-	if(phys_intersect_x(world, entity, tx)) {
+	if((block = phys_intersect_x(world, entity, tx, &where)) != NULL) {
 	  t = tx2;
+	  block->collide(world, entity, &where);
 	  entity->vel.x = 0.0;
 	  goto next;
 	}
 	t = tx;
 	if(ty2 > t) {goto next;}
-	if(phys_intersect_y(world, entity, ty)) {
+	if((block = phys_intersect_y(world, entity, ty, &where)) != NULL) {
 	  t = ty2;
+	  block->collide(world, entity, &where);
 	  entity->vel.y = 0.0;
 	  goto next;
 	}
 	t = ty;
 	if(tz2 > t) {goto next;}
-	if(phys_intersect_z(world, entity, tz)) {
+	if((block = phys_intersect_z(world, entity, tz, &where)) != NULL) {
 	  t = tz2;
+	  block->collide(world, entity, &where);
 	  entity->vel.z = 0.0;
 	  goto next;
 	}
 	t = tz;
       } else if(tx < tz) { // tx, tz, ty
 	if(tx2 > t) {goto next;}
-	if(phys_intersect_x(world, entity, tx)) {
+	if((block = phys_intersect_x(world, entity, tx, &where)) != NULL) {
 	  t = tx2;
+	  block->collide(world, entity, &where);
 	  entity->vel.x = 0.0;
 	  goto next;
 	}
 	t = tx;
 	if(tz2 > t) {goto next;}
-	if(phys_intersect_z(world, entity, tz)) {
+	if((block = phys_intersect_z(world, entity, tz, &where)) != NULL) {
 	  t = tz2;
+	  block->collide(world, entity, &where);
 	  entity->vel.z = 0.0;
 	  goto next;
 	}
 	t = tz;
 	if(ty2 > t) {goto next;}
-	if(phys_intersect_y(world, entity, ty)) {
+	if((block = phys_intersect_y(world, entity, ty, &where)) != NULL) {
 	  t = ty2;
+	  block->collide(world, entity, &where);
 	  entity->vel.y = 0.0;
 	  goto next;
 	}
 	t = ty;
       } else { // tz, tx, ty
 	if(tz2 > t) {goto next;}
-	if(phys_intersect_z(world, entity, tz)) {
+	if((block = phys_intersect_z(world, entity, tz, &where)) != NULL) {
 	  t = tz2;
+	  block->collide(world, entity, &where);
 	  entity->vel.z = 0.0;
 	  goto next;
 	}
 	t = tz;
 	if(tx2 > t) {goto next;}
-	if(phys_intersect_x(world, entity, tx)) {
+	if((block = phys_intersect_x(world, entity, tx, &where)) != NULL) {
 	  t = tx2;
+	  block->collide(world, entity, &where);
 	  entity->vel.x = 0.0;
 	  goto next;
 	}
 	t = tx;
 	if(ty2 > t) {goto next;}
-	if(phys_intersect_y(world, entity, ty)) {
+	if((block = phys_intersect_y(world, entity, ty, &where)) != NULL) {
 	  t = ty2;
+	  block->collide(world, entity, &where);
 	  entity->vel.y = 0.0;
 	  goto next;
 	}
@@ -227,66 +241,75 @@ double phys_update(World *world, double tmax)
     } else {
       if(tx < tz) { // ty, tx, tz
 	if(ty2 > t) {goto next;}
-	if(phys_intersect_y(world, entity, ty)) {
+	if((block = phys_intersect_y(world, entity, ty, &where)) != NULL) {
 	  t = ty2;
+	  block->collide(world, entity, &where);
 	  entity->vel.y = 0.0;
 	  goto next;
 	}
 	t = ty;
 	if(tx2 > t) {goto next;}
-	if(phys_intersect_x(world, entity, tx)) {
+	if((block = phys_intersect_x(world, entity, tx, &where)) != NULL) {
 	  t = tx2;
+	  block->collide(world, entity, &where);
 	  entity->vel.x = 0.0;
 	  goto next;
 	}
 	t = tx;
 	if(tz2 > t) {goto next;}
-	if(phys_intersect_z(world, entity, tz)) {
+	if((block = phys_intersect_z(world, entity, tz, &where)) != NULL) {
 	  t = tz2;
+	  block->collide(world, entity, &where);
 	  entity->vel.z = 0.0;
 	  goto next;
 	}
 	t = tz;
       } else if(ty < tz) { // ty, tz, tx
 	if(ty2 > t) {goto next;}
-	if(phys_intersect_y(world, entity, ty)) {
+	if((block = phys_intersect_y(world, entity, ty, &where)) != NULL) {
 	  t = ty2;
+	  block->collide(world, entity, &where);
 	  entity->vel.y = 0.0;
 	  goto next;
 	}
 	t = ty;
 	if(tz2 > t) {goto next;}
-	if(phys_intersect_z(world, entity, tz)) {
+	if((block = phys_intersect_z(world, entity, tz, &where)) != NULL) {
 	  t = tz2;
+	  block->collide(world, entity, &where);
 	  entity->vel.z = 0.0;
 	  goto next;
 	}
 	t = tz;
 	if(tx2 > t) {goto next;}
-	if(phys_intersect_x(world, entity, tx)) {
+	if((block = phys_intersect_x(world, entity, tx, &where)) != NULL) {
 	  t = tx2;
+	  block->collide(world, entity, &where);
 	  entity->vel.x = 0.0;
 	  goto next;
 	}
 	t = tx;
       } else { // tz, ty, tx
 	if(tz2 > t) {goto next;}
-	if(phys_intersect_z(world, entity, tz)) {
+	if((block = phys_intersect_z(world, entity, tz, &where)) != NULL) {
 	  t = tz2;
+	  block->collide(world, entity, &where);
 	  entity->vel.z = 0.0;
 	  goto next;
 	}
 	t = tz;
 	if(ty2 > t) {goto next;}
-	if(phys_intersect_y(world, entity, ty)) {
+	if((block = phys_intersect_y(world, entity, ty, &where)) != NULL) {
 	  t = ty2;
+	  block->collide(world, entity, &where);
 	  entity->vel.y = 0.0;
 	  goto next;
 	}
 	t = ty;
 	if(tx2 > t) {goto next;}
-	if(phys_intersect_x(world, entity, tx)) {
+	if((block = phys_intersect_x(world, entity, tx, &where)) != NULL) {
 	  t = tx2;
+	  block->collide(world, entity, &where);
 	  entity->vel.x = 0.0;
 	  goto next;
 	}
@@ -295,14 +318,14 @@ double phys_update(World *world, double tmax)
     }
 
   next:
-#ifdef DEBUG
+#ifdef DEBUG_PHYSICS
     fprintf(stderr, "[PHYS ] entity finished, time step is %.4f\n", t);
 #endif
     entity = world->entities[++i];
   }
 
   // second round, this time we will be applying the pos changes
-#ifdef DEBUG
+#ifdef DEBUG_PHYSICS
   fprintf(stderr, "[PHYS ] starting second iteration to apply changes\n");
 #endif
   i = 0;
@@ -316,7 +339,7 @@ double phys_update(World *world, double tmax)
     vec_scale3d(&tmp, &entity->avel, t);
     vec_add3d(&entity->apos, &entity->apos, &tmp);
 
-#ifdef DEBUG
+#ifdef DEBUG_PHYSICS
     double x = entity->pos.x + entity->bb_off.x + (entity->vel.x > 0 ? entity->bb_dim.x : -entity->bb_dim.x);
     double y = entity->pos.y + entity->bb_off.y + (entity->vel.y > 0 ? entity->bb_dim.y : -entity->bb_dim.y);
     double z = entity->pos.z + entity->bb_off.z + (entity->vel.z > 0 ? entity->bb_dim.z : -entity->bb_dim.z);
@@ -327,7 +350,7 @@ double phys_update(World *world, double tmax)
 #endif
     entity = world->entities[++i];
   }
-#ifdef DEBUG
+#ifdef DEBUG_PHYSICS
   fprintf(stderr, "[PHYS ] processed %d entities, cycle time %d usecs\n", i, (int) (t * 1000000));
 #endif
   

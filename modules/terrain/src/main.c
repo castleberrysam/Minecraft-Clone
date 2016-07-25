@@ -2,11 +2,8 @@
 #include <tinydir.h>
 #include "texture.h"
 #include "block.h"
-#include "model.h"
-#include "entity.h"
-#include "action.h"
 
-Block **blocks = NULL;
+static Block **blocks = NULL;
 
 char * module_get_name(void)
 {
@@ -55,7 +52,7 @@ __attribute__((constructor)) void load(void)
     snprintf(str_id, 64, "block_%s", file.name);
     str_id[strlen(str_id)-4] = '\0';
     Block *block = malloc(sizeof(Block));
-    block_init(block, texture, str_id, str_id);
+    block_init(block, texture, str_id, str_id, false);
     
     ++num_blocks;
     blocks = realloc(blocks, num_blocks*sizeof(Block *));

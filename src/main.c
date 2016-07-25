@@ -43,14 +43,7 @@ static int fps = FPS_LIM;
 
 static bool selecting = false;
 static Vector3d trace;
-static enum {
-  NORTH,
-  EAST,
-  SOUTH,
-  WEST,
-  TOP,
-  BOTTOM
-} side;
+Side side;
 
 static int num_mappings = 0;
 static int current_block = 0;
@@ -162,6 +155,10 @@ static void click(GLFWwindow *window, int button, int action, int modifiers)
     world_block_set3d(game->worlds[0], &trace, NULL);
     sound_play_static(&sound_break, &trace);
   } else if(button == GLFW_MOUSE_BUTTON_RIGHT && action == GLFW_PRESS) {
+    Block *block = world_block_get3d(game->worlds[0], &trace);
+    if(glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_RELEASE &&
+       block->activate(game->worlds[0], (Player *) game->worlds[0]->entities[0], &trace)) {return;}
+    
     Vector3d tmp;
     switch(side) {
     case NORTH:
@@ -345,19 +342,7 @@ int main(void)
     glfwPollEvents();
 
     selecting = phys_trace(world, player, 5.0, &trace);
-    if(ABS(trace.x - ceil(trace.x)) <= PHYS_TOL*1.1) {
-      side = EAST;
-    } else if(ABS(trace.x - floor(trace.x)) <= PHYS_TOL*1.1) {
-      side = WEST;
-    } else if(ABS(trace.y - ceil(trace.y)) <= PHYS_TOL*1.1) {
-      side = TOP;
-    } else if(ABS(trace.y - floor(trace.y)) <= PHYS_TOL*1.1) {
-      side = BOTTOM;
-    } else if(ABS(trace.z - ceil(trace.z)) <= PHYS_TOL*1.1) {
-      side = SOUTH;
-    } else {
-      side = NORTH;
-    }
+    side = block_side_get(&trace);
 
     if(phys_is_grounded(world, player)) {
       if(player->vel.x >= FRICTION) {

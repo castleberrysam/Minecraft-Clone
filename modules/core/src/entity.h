@@ -4,7 +4,7 @@
 #include "vector.h"
 #include "model.h"
 
-typedef enum {
+typedef enum EntityType {
   PLAYER,
   OTHER
 } EntityType;

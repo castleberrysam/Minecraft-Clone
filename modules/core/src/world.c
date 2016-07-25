@@ -63,19 +63,10 @@ static double world_noise(int x, int y)
 
 bool world_chunk_gen3i(World *world, Vector3i *pos, uint64_t seed)
 {
-#ifdef DEBUG
-  fprintf(stderr, "[WORLD] new chunk <%d, %d, %d> seed %d\n",
-	  (int) pos->x, (int) pos->y, (int) pos->z, (int) seed);
-#endif
   int i = 0;
   Chunk *chunk = world->chunks[i];
   while(chunk != NULL) {
-    if(vec_equal3i(&chunk->pos, pos)) {
-#ifdef DEBUG
-      fprintf(stderr, "[WORLD] that chunk already exists\n");
-#endif
-      return false;
-    }
+    if(vec_equal3i(&chunk->pos, pos)) {return false;}
     chunk = world->chunks[++i];
   }
 
@@ -92,17 +83,17 @@ bool world_chunk_gen3i(World *world, Vector3i *pos, uint64_t seed)
 	int absy = y + (pos->y * 16);
 	int index = x + (y * 16) + (z * 256);
 	if(absy > noise) {continue;}
-	char *block = absy == floor(noise) ? "block_tiled" : "block_rock";
-	chunk->blocks[index] = world_mapping_get(world, block);
+	Block *block = world_mapping_get(world, absy == floor(noise) ? "block_tiled" : "block_rock");
+	chunk->blocks[index] = block;
+	Vector3i tmp;
+	vec_set3i(&tmp, absx, absy, absz);
+	block->create(world, NULL, &tmp);
 	chunk->changed = true;
 	chunk->empty = false;
       }
     }
   }
 
-#ifdef DEBUG
-  fprintf(stderr, "[WORLD] new chunk is %p\n", chunk);
-#endif
   world->chunks[i] = chunk;
   world->chunks[i+1] = NULL;
   return true;
@@ -117,28 +108,30 @@ bool world_chunk_gen3d(World *world, Vector3d *pos, uint64_t seed)
 
 bool world_chunk_delete3i(World *world, Vector3i *pos)
 {
-#ifdef DEBUG
-  fprintf(stderr, "[WORLD] delete chunk <%d, %d, %d>\n", (int) pos->x, (int) pos->y, (int) pos->z);
-#endif
   int i = 0, j = -1;
-  Chunk *tmp = world->chunks[i];
-  while(tmp != NULL) {
-    if(j < 0 && vec_equal3i(&tmp->pos, pos)) {
-#ifdef DEBUG
-      fprintf(stderr, "[WORLD] deleting chunk %p\n", tmp);
-#endif
-      chunk_delete(tmp);
-      free(tmp);
+  Chunk *chunk = world->chunks[i];
+  while(chunk != NULL) {
+    if(j < 0 && vec_equal3i(&chunk->pos, pos)) {
+      for(int x=0;x<16;++x) {
+	for(int y=0;y<16;++y) {
+	  for(int z=0;z<16;++z) {
+	    int absx = x + (pos->x * 16);
+	    int absy = y + (pos->y * 16);
+	    int absz = z + (pos->z * 16);
+	    int index = x + (y * 16) + (z * 256);
+	    Vector3i tmp;
+	    vec_set3i(&tmp, absx, absy, absz);
+	    chunk->blocks[index]->destroy(world, NULL, &tmp);
+	  }
+	}
+      }
+      chunk_delete(chunk);
+      free(chunk);
       j = i;
     }
-    tmp = world->chunks[++i];
+    chunk = world->chunks[++i];
   }
-  if(j < 0) {
-#ifdef DEBUG
-    fprintf(stderr, "[WORLD] that chunk doesn't exist\n");
-#endif
-    return false;
-  }
+  if(j < 0) {return false;}
   
   world->chunks[j] = world->chunks[i-1];
   world->chunks[i-1] = NULL;
@@ -329,10 +322,6 @@ Block * world_block_get3i(World *world, Vector3i *pos)
   if(pos->x < 0) {--tmp.x;}
   if(pos->y < 0) {--tmp.y;}
   if(pos->z < 0) {--tmp.z;}
-#ifdef DEBUG
-  fprintf(stderr, "[WORLD] block requested from chunk <%d, %d, %d>\n",
-	  (int) tmp.x, (int) tmp.y, (int) tmp.z);
-#endif
   
   int i = 0;
   Chunk *chunk = world->chunks[i];

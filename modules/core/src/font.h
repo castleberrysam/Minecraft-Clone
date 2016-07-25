@@ -6,7 +6,7 @@
 #include FT_FREETYPE_H
 #include FT_GLYPH_H
 
-typedef struct {
+typedef struct Font {
   FT_Face face;
   GLuint atlas;
   int awidth;

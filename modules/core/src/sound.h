@@ -7,7 +7,7 @@
 #include <vorbis/vorbisfile.h>
 #include "vector.h"
 
-typedef struct {
+typedef struct Sound {
   ALuint buffer;
   OggVorbis_File *file;
   vorbis_info *info;

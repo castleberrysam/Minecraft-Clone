@@ -3,13 +3,13 @@
 
 #include <stdbool.h>
 
-typedef enum {
+typedef enum ActionType {
   PRESS,
   RELEASE,
   BOTH
 } ActionType;
 
-typedef struct {
+typedef struct Action {
   unsigned char key;
   bool case_sens;
   ActionType type;

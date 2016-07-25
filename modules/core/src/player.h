@@ -5,7 +5,7 @@
 #include "inventory.h"
 #include <stdint.h>
 
-typedef struct {
+typedef struct Player {
   Entity entity;
   Inventory *inv;
   uint32_t hp;

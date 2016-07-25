@@ -3,7 +3,7 @@
 
 #include "item.h"
 
-typedef struct {
+typedef struct Inventory {
   Item **items;
 } Inventory;
 

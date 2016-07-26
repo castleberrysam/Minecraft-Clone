@@ -79,6 +79,14 @@ static Block * phys_intersect_y(World *world, Entity *entity, double t, Vector3d
   vec_add3d(&pos, &pos, &entity->bb_off);
   pos.y += entity->vel.y > 0.0 ? entity->bb_dim.y : -entity->bb_dim.y;
 
+  Block *block = phys_intersect(world, &pos, &entity->vel, t, where);
+  if(block != NULL) {
+#ifdef DEBUG_PHYSICS
+    fprintf(stderr, "[PHYS ] collision on y\n");
+#endif
+    return block;
+  }
+
   double xmax = floor(entity->bb_dim.x);
   double zmax = floor(entity->bb_dim.z);
   for(double x=-entity->bb_dim.x;floor(x)<=xmax;++x) {
@@ -88,7 +96,7 @@ static Block * phys_intersect_y(World *world, Entity *entity, double t, Vector3d
       vec_copy3d(&tmp, &pos);
       tmp.x += x;
       tmp.z += z;
-      Block *block = phys_intersect(world, &tmp, &entity->vel, t, where);
+      block = phys_intersect(world, &tmp, &entity->vel, t, where);
       if(block != NULL) {
 #ifdef DEBUG_PHYSICS
 	fprintf(stderr, "[PHYS ] collision on y\n");

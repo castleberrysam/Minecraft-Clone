@@ -104,12 +104,12 @@ GLuint compile_program(int num, GLuint *shaders)
   for(int i=0;i<num;++i) {glAttachShader(program, shaders[i]);}
   glLinkProgram(program);
   glGetProgramiv(program, GL_LINK_STATUS, &success);
-  
+
 #ifdef DEBUG_GRAPHICS
   if(success != GL_TRUE) {
     fprintf(stderr, "[SHADR] program failed to link\n");
   }
-  
+
   GLint info_len;
   glGetProgramiv(program, GL_INFO_LOG_LENGTH, &info_len);
   if(info_len < 2) {goto end;}
@@ -127,4 +127,28 @@ GLuint compile_program(int num, GLuint *shaders)
     glDeleteProgram(program);
     return 0;
   }
+}
+
+void set_xfb_varyings(GLuint program, int num, char **varyings, GLenum order)
+{
+  glTransformFeedbackVaryings(program, num,
+			      (const GLchar * const *) varyings, order);
+  glLinkProgram(program);
+
+#ifdef DEBUG_GRAPHICS
+  GLint success;
+  glGetProgramiv(program, GL_LINK_STATUS, &success);
+  if(success != GL_TRUE) {
+    fprintf(stderr, "[SHADR] program linkage failed while setting feedback\n");
+  }
+
+  GLint info_len;
+  glGetProgramiv(program, GL_INFO_LOG_LENGTH, &info_len);
+  if(info_len == 0) {return;}
+
+  char *info = malloc(info_len);
+  glGetProgramInfoLog(program, info_len, NULL, info);
+  fprintf(stderr, "[SHADR] begin program %d info log\n%s[SHADR] end log\n", program, info);
+  free(info);
+#endif
 }

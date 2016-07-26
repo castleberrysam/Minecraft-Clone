@@ -34,7 +34,7 @@ static void collide_bounce(World *world, Entity *entity, Vector3d *pos)
   sound_play_static(&sound_bounce, pos);
 }
 
-__attribute__((constructor)) void load(void)
+void module_load(void)
 {
   sound_init(&sound_bounce, "modules/terrain/res/bounce.ogg", 1.0, 1.0);
   
@@ -80,7 +80,7 @@ __attribute__((constructor)) void load(void)
   tinydir_close(&dir);
 }
 
-__attribute__((destructor)) void unload(void)
+void module_unload(void)
 {
   int i = 0;
   Block *block = blocks[i];
@@ -92,4 +92,5 @@ __attribute__((destructor)) void unload(void)
   }
   free(blocks);
   blocks = NULL;
+  sound_delete(&sound_bounce);
 }

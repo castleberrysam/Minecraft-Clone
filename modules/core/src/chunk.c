@@ -20,9 +20,7 @@ void chunk_init(Chunk *chunk, Vector3i *pos)
     shaders[1] = load_shader("res/shader/chunk_regen.geom", GL_GEOMETRY_SHADER);
     program_regen = compile_program(2, shaders);
     char *varyings[3] = {"pos", "texcoords", "tex"};
-    glTransformFeedbackVaryings(program_regen, 3, (const GLchar * const *) varyings,
-				GL_INTERLEAVED_ATTRIBS);
-    glLinkProgram(program_regen);
+    set_xfb_varyings(program_regen, 3, varyings, GL_INTERLEAVED_ATTRIBS);
 
     shaders[0] = load_shader("res/shader/chunk_render.vert", GL_VERTEX_SHADER);
     shaders[1] = load_shader("res/shader/chunk_render.frag", GL_FRAGMENT_SHADER);

@@ -1,16 +1,16 @@
 LIN_CC = gcc
-WIN_CC = i686-w64-mingw32-gcc
+WIN_CC = x86_64-pc-cygwin-gcc
 OSX_CC = 
 LIN_LIBS = -lGL -lGLEW -lcore
-WIN_LIBS = -lopengl32 -lglu32 -lglew32.dll -lcore
+WIN_LIBS = -lopengl32 -lglu32 -lglew32 -lcore
 OSX_LIBS = 
 LIN_BIN = libterrain.so
 WIN_BIN = terrain.dll
 OSX_BIN = 
-ALL_FLAGS = -g -Wall -mtune=generic -Og -fPIC
-LIN_FLAGS = 
+ALL_FLAGS = -g -Wall -mtune=generic -Og
+LIN_FLAGS = -fPIC
 WIN_FLAGS = 
-OSX_FLAGS =
+OSX_FLAGS = -fPIC
 ALL_LINK = -shared
 LIN_LINK =
 WIN_LINK =
@@ -20,7 +20,7 @@ SRC_FILES := $(wildcard src/*.c)
 LIN_BUILD := $(patsubst src/%.c, build/linux/%.o, $(SRC_FILES))
 WIN_BUILD := $(patsubst src/%.c, build/win/%.o, $(SRC_FILES))
 OSX_BUILD := $(patsubst src/%.c, build/osx/%.o, $(SRC_FILES))
-all: linux win
+all: linux
 linux: $(LIN_BUILD) dist
 	$(LIN_CC) $(LIN_LINK) $(ALL_LINK) -o dist/linux/$(LIN_BIN) ${LIN_BUILD} -Llib/linux/ -L../../lib/linux/ -L../core/dist/linux/ $(LIN_LIBS)
 win: $(WIN_BUILD) dist
@@ -30,7 +30,7 @@ osx: $(OSX_BUILD) dist
 build/linux/%.o: src/%.c build
 	$(LIN_CC) -c $(LIN_FLAGS) $(ALL_FLAGS) -o $@ $< -Iinclude/linux/ -I../../include/linux/ -I../core/src/
 build/win/%.o: src/%.c build
-	$(WIN_CC) -c $(WIN_FLAGS) $(ALL_FLAGS) -o $@ $< -Iinclude/win/ -I../../include/win/ -I../core/src/
+	$(WIN_CC) -c $(WIN_FLAGS) $(ALL_FLAGS) -o $@ $< -Iinclude/win/ -I../../include/win/ -I../core/src/ -I/usr/include/freetype2/
 build/osx/%.o: src/%.c build
 	$(OSX_CC) -c $(OSX_FLAGS) $(ALL_FLAGS) -o $@ $< -Iinclude/osx/ -I../../include/osx/ -I../core/src/
 build:

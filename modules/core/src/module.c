@@ -1,6 +1,6 @@
 #include <stdlib.h>
 #include <string.h>
-#ifdef __MINGW32__
+#if defined __MINGW32__ || defined __CYGWIN__
 #include <windows.h>
 #else
 #include <dlfcn.h>
@@ -23,9 +23,13 @@ void module_delete(Module *module)
 bool module_load(Module *module)
 {
   if(module->loaded) {return true;}
-#ifdef __MINGW32__
+#if defined __MINGW32__ || defined __CYGWIN__
   module->library = LoadLibrary(TEXT(module->filename));
   if(module->library == NULL) {return false;}
+  module->load = (mod_load_func) GetProcAddress(module->library, TEXT("module_load"));
+  if(module->load == NULL) {goto cleanup;}
+  module->unload = (mod_unload_func) GetProcAddress(module->library, TEXT("module_unload"));
+  if(module->unload == NULL) {goto cleanup;}
   module->get_name = (get_str_func) GetProcAddress(module->library, TEXT("module_get_name"));
   if(module->get_name == NULL) {goto cleanup;}
   module->get_author = (get_str_func) GetProcAddress(module->library, TEXT("module_get_author"));
@@ -37,6 +41,7 @@ bool module_load(Module *module)
   module->get_entities = (get_e_arr_func) GetProcAddress(module->library, TEXT("module_get_entities"));
   module->get_actions = (get_a_arr_func) GetProcAddress(module->library, TEXT("module_get_actions"));
   module->loaded = true;
+  module->load();
   return true;
  cleanup:
   FreeLibrary(module->library);
@@ -44,6 +49,10 @@ bool module_load(Module *module)
 #else
   module->library = dlopen(module->filename, RTLD_LAZY | RTLD_LOCAL | RTLD_DEEPBIND);
   if(module->library == NULL) {return false;}
+  module->load = dlsym(module->library, "module_load");
+  if(module->load == NULL) {goto cleanup;}
+  module->unload = dlsym(module->library, "module_unload");
+  if(module->unload == NULL) {goto cleanup;}
   module->get_name = dlsym(module->library, "module_get_name");
   if(module->get_name == NULL) {goto cleanup;}
   module->get_author = dlsym(module->library, "module_get_author");
@@ -65,7 +74,8 @@ bool module_load(Module *module)
 bool module_unload(Module *module)
 {
   if(!module->loaded) {return true;}
-#ifdef __MINGW32__
+  module->unload();
+#if defined __MINGW32__ || defined __CYGWIN__
   return FreeLibrary(module->library);
 #else
   return dlclose(module->library);

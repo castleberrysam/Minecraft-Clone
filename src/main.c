@@ -59,15 +59,15 @@ static void glerror(GLenum source, GLenum type, GLuint id, GLenum severity,
 {
   if(severity == GL_DEBUG_SEVERITY_NOTIFICATION) {return;}
   fprintf(stderr, "[INIT ] begin OpenGL error report\n[INIT ] source: %d\n[INIT ] type: %d\n[INIT ] id: %d\n[INIT ] severity: %d\n[INIT ] %s\n[INIT ] end report\n", source, type, id, severity, message);
+#if !(defined __MINGW__ || defined __CYGWIN__)
   asm("int $3");
+#endif
 }
 #endif
 
 static void error(int error, const char *description)
 {
-#ifdef DEBUG_GRAPHICS
   fprintf(stderr, "[INIT ] glfw error: %s\n", description);
-#endif
 }
 
 static void display(GLFWwindow *window)
@@ -83,7 +83,8 @@ static void display(GLFWwindow *window)
   
   matrix_identity(mview_matrix);
   matrix_rotate_x(mview_matrix, RADS(player->apos.x));
-  matrix_rotate_y(mview_matrix, RADS(player->apos.y));  
+  matrix_rotate_y(mview_matrix, RADS(player->apos.y));
+
   matrix_translate(mview_matrix, -player->pos.x, -player->pos.y-0.5, -player->pos.z);
   world_draw(world);
   
@@ -94,7 +95,7 @@ static void display(GLFWwindow *window)
   char tmp[64];
   snprintf(tmp, 64, "FPS: %d", fps);
   font_text_draw(font, tmp);
-  
+
   int width, height;
   glfwGetFramebufferSize(window, &width, &height);
   matrix_identity(mview_matrix);
@@ -107,16 +108,16 @@ static void display(GLFWwindow *window)
   matrix_identity(mview_matrix);
   matrix_translate(mview_matrix, width-10.0-font_text_width(font, coords), 10.0, 0.0);
   font_text_draw(font, coords);
-  
+
   glBindVertexArray(vao_points);
   glDisableVertexAttribArray(0);
   glVertexAttrib3f(0, 0.0f, 0.0f, 0.0f);
   glUseProgram(program_points);
   glPointSize(10.0);
   glDrawArrays(GL_POINTS, 0, 1);
-  
+
   mstack_pick(mstack, proj_matrix, 1);
-  
+
   glfwSwapBuffers(window);
 }
 
@@ -219,9 +220,7 @@ int main(void)
   glfwSetErrorCallback(error);
   
   if(!glfwInit()) {
-#ifdef DEBUG
     fprintf(stderr, "[INIT ] glfw failed to initialize\n");
-#endif
     return 1;
   }
 
@@ -233,27 +232,23 @@ int main(void)
   glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
   GLFWwindow *window = glfwCreateWindow(800, 800, "test", NULL, NULL);
   if(!window) {
-#ifdef DEBUG
     fprintf(stderr, "[INIT ] glfw window creation failed\n");
-#endif
     glfwTerminate();
     return 1;
   }
   glfwMakeContextCurrent(window);
-  
-  if(glewInit() != GLEW_OK) {
-#ifdef DEBUG
-    fprintf(stderr, "[INIT ] glew failed to initialize\n");
-#endif
+
+  glewExperimental = GL_TRUE;
+  GLenum error = glewInit();
+  if(error != GLEW_OK) {
+    fprintf(stderr, "[INIT ] glew error: %s\n", glewGetErrorString(error));
     return 1;
   }
   if(!GLEW_VERSION_3_3) {
-#ifdef DEBUG
     fprintf(stderr, "[INIT ] context does not support OpenGL >= 3.3\n");
-#endif
     return 1;
   }
-  
+
 #ifdef DEBUG_GRAPHICS
   if(GLEW_VERSION_4_3) {
     glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
@@ -268,7 +263,7 @@ int main(void)
   glfwSetMouseButtonCallback(window, click);
   glfwSetScrollCallback(window, scroll);
   glfwSetKeyCallback(window, keyboard);
-  
+
   matrix_static_init();
   mstack_push(mstack, proj_matrix);
   mstack_push(mstack, proj_matrix);
@@ -280,7 +275,7 @@ int main(void)
   glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
   font = malloc(sizeof(Font));
-#ifdef __MINGW32__
+#if defined __MINGW32__ || defined __CYGWIN__
   font_init(font, "C:\\Windows\\Fonts\\arial.ttf", 12);
 #elif defined __APPLE__
   font_init(font, "/Library/Fonts/Arial.ttf", 12);
@@ -303,7 +298,7 @@ int main(void)
   glfwSetWindowUserPointer(window, game);
   
   Module terrain;
-#ifdef __MINGW32__
+#if defined __MINGW32__ || defined __CYGWIN__
   module_init(&terrain, "terrain.dll");
 #else
   module_init(&terrain, "libterrain.so");
@@ -451,7 +446,7 @@ int main(void)
     
     clock_gettime(CLOCK_REALTIME, &finish);
     finish.tv_nsec += (finish.tv_sec - start.tv_sec) * 1000000000;
-    long ttotal = (finish.tv_nsec - start.tv_nsec) / 1000;
+    long ttotal = MAX((finish.tv_nsec - start.tv_nsec) / 1000, 1);
     fps = MIN(1000000/ttotal, FPS_LIM);
     /*
 #ifdef DEBUG
@@ -469,7 +464,7 @@ int main(void)
     ++frame;
     usleep(ttotal > (1000000/FPS_LIM) ? 0 : (1000000/FPS_LIM) - ttotal);
   }
-  
+
   if(frame > 120) {
     fprintf(stderr, "[INIT ] exiting main loop, render max %d, physics max %d, total max %d (%d fps)\n",
 	    (int) trender_max, (int) tphysics_max, (int) ttotal_max, (int) (1000000/ttotal_max));

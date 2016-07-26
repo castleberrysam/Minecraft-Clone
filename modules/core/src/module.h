@@ -7,6 +7,8 @@
 #include "entity.h"
 #include "action.h"
 
+typedef void (*mod_load_func)(void);
+typedef void (*mod_unload_func)(void);
 typedef char * (*get_str_func)(void);
 typedef Block ** (*get_b_arr_func)(void);
 typedef Model ** (*get_m_arr_func)(void);
@@ -17,6 +19,8 @@ typedef struct Module {
   void *library;
   bool loaded;
   char *filename;
+  mod_load_func load;
+  mod_unload_func unload;
   get_str_func get_name;
   get_str_func get_author;
   get_str_func get_ver;

@@ -2,20 +2,19 @@
 #include <png.h>
 #include "texture.h"
 
-GLuint texture_array = 0;
+GLuint texture_atlas = 0;
 static int num_textures = 0;
 
 int texture_load(char *filepath)
 {
-  if(texture_array == 0) {
-    glGenTextures(1, &texture_array);
-    glBindTexture(GL_TEXTURE_CUBE_MAP_ARRAY, texture_array);
+  if(texture_atlas == 0) {
+    glGenTextures(1, &texture_atlas);
+    glBindTexture(GL_TEXTURE_2D, texture_atlas);
     // XXX only about 150MB, but probably should just allocate as needed
-    //    glTexStorage3D(GL_TEXTURE_CUBE_MAP_ARRAY, 1, GL_RGB8, 64, 64, 6*16);
-    glTexImage3D(GL_TEXTURE_CUBE_MAP_ARRAY, 0, GL_RGB, 64, 64, 6*16,
-		 0, GL_RGBA, GL_UNSIGNED_BYTE, (const GLvoid *) NULL);
-    glTexParameteri(GL_TEXTURE_CUBE_MAP_ARRAY, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_CUBE_MAP_ARRAY, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 64*16, 64*16, 0,
+		 GL_RGBA, GL_UNSIGNED_BYTE, (const GLvoid *) NULL);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
   }
   
   FILE *file = fopen(filepath, "rb");
@@ -91,11 +90,9 @@ int texture_load(char *filepath)
   png_destroy_read_struct(&png, &info, (png_infopp) NULL);
   fclose(file);
 
-  glBindTexture(GL_TEXTURE_CUBE_MAP_ARRAY, texture_array);
-  for(int i=0;i<6;++i) {
-    glTexSubImage3D(GL_TEXTURE_CUBE_MAP_ARRAY, 0, 0, 0, (num_textures*6)+i, width, height, 1,
-		    GL_RGBA, GL_UNSIGNED_BYTE, (const GLvoid *) 0);
-  }
+  glBindTexture(GL_TEXTURE_2D, texture_atlas);
+  glTexSubImage2D(GL_TEXTURE_2D, 0, (num_textures%16)*64, (num_textures/16)*64,
+		  64, 64, GL_RGBA, GL_UNSIGNED_BYTE, (const GLvoid *) 0);
   
 #ifdef DEBUG_GRAPHICS
   fprintf(stderr, "[TEXTR] path %s, width %d, height %d, rowbytes %d\n", filepath, width, height, rowbytes);

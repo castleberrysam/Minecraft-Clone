@@ -1,10 +1,10 @@
-#version 400 core
+#version 330 core
 
 uniform isamplerBuffer blocks;
 layout(points) in;
 layout(triangle_strip, max_vertices=24) out;
-out vec3 off;
 out vec3 pos;
+out vec2 texcoords;
 out int tex;
 
 const vec3 vertices[8] = vec3[](
@@ -27,6 +27,13 @@ const int indices[24] = int[](
   4, 5, 0, 1  // 20 (BOTTOM)
 );
 
+const vec2 coords[4] = vec2[](
+  vec2(0.0, 1.0),
+  vec2(0.0, 0.0),
+  vec2(1.0, 1.0),
+  vec2(1.0, 0.0)
+);
+
 int getblock(int x, int y, int z)
 {
   vec4 offset = gl_in[0].gl_Position + vec4(x+1, y+1, z+1, 0.0);
@@ -40,8 +47,8 @@ void main(void)
   if(current == -1) {return;}
   if(getblock(0,0,-1) == -1) {
     for(int i=0;i<4;++i) {
-      off = gl_in[0].gl_Position.xyz;
-      pos = vertices[indices[i]];
+      pos = gl_in[0].gl_Position.xyz + vertices[indices[i]];
+      texcoords = coords[i];
       tex = current;
       EmitVertex();
     }
@@ -49,8 +56,8 @@ void main(void)
   }
   if(getblock(1,0,0) == -1) {
     for(int i=0;i<4;++i) {
-      off = gl_in[0].gl_Position.xyz;
-      pos = vertices[indices[i+4]];
+      pos = gl_in[0].gl_Position.xyz + vertices[indices[i+4]];
+      texcoords = coords[i];
       tex = current;
       EmitVertex();
     }
@@ -58,8 +65,8 @@ void main(void)
   }
   if(getblock(0,0,1) == -1) {
     for(int i=0;i<4;++i) {
-      off = gl_in[0].gl_Position.xyz;
-      pos = vertices[indices[i+8]];
+      pos = gl_in[0].gl_Position.xyz + vertices[indices[i+8]];
+      texcoords = coords[i];
       tex = current;
       EmitVertex();
     }
@@ -67,8 +74,8 @@ void main(void)
   }
   if(getblock(-1,0,0) == -1) {
     for(int i=0;i<4;++i) {
-      off = gl_in[0].gl_Position.xyz;
-      pos = vertices[indices[i+12]];
+      pos = gl_in[0].gl_Position.xyz + vertices[indices[i+12]];
+      texcoords = coords[i];
       tex = current;
       EmitVertex();
     }
@@ -76,8 +83,8 @@ void main(void)
   }
   if(getblock(0,1,0) == -1) {
     for(int i=0;i<4;++i) {
-      off = gl_in[0].gl_Position.xyz;
-      pos = vertices[indices[i+16]];
+      pos = gl_in[0].gl_Position.xyz + vertices[indices[i+16]];
+      texcoords = coords[i];
       tex = current;
       EmitVertex();
     }
@@ -85,8 +92,8 @@ void main(void)
   }
   if(getblock(0,-1,0) == -1) {
     for(int i=0;i<4;++i) {
-      off = gl_in[0].gl_Position.xyz;
-      pos = vertices[indices[i+20]];
+      pos = gl_in[0].gl_Position.xyz + vertices[indices[i+20]];
+      texcoords = coords[i];
       tex = current;
       EmitVertex();
     }

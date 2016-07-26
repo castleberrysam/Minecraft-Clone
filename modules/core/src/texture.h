@@ -3,7 +3,7 @@
 
 #include <GL/glew.h>
 
-extern GLuint texture_array;
+extern GLuint texture_atlas;
 
 int texture_load(char *filepath);
 

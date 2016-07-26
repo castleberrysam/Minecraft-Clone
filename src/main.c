@@ -48,6 +48,7 @@ Side side;
 static int num_mappings = 0;
 static int current_block = 0;
 
+static GLuint vao_points;
 static GLuint program_points;
 
 static Sound sound_break;
@@ -82,8 +83,7 @@ static void display(GLFWwindow *window)
   
   matrix_identity(mview_matrix);
   matrix_rotate_x(mview_matrix, RADS(player->apos.x));
-  matrix_rotate_y(mview_matrix, RADS(player->apos.y));
-  
+  matrix_rotate_y(mview_matrix, RADS(player->apos.y));  
   matrix_translate(mview_matrix, -player->pos.x, -player->pos.y-0.5, -player->pos.z);
   world_draw(world);
   
@@ -94,7 +94,7 @@ static void display(GLFWwindow *window)
   char tmp[64];
   snprintf(tmp, 64, "FPS: %d", fps);
   font_text_draw(font, tmp);
-
+  
   int width, height;
   glfwGetFramebufferSize(window, &width, &height);
   matrix_identity(mview_matrix);
@@ -107,17 +107,16 @@ static void display(GLFWwindow *window)
   matrix_identity(mview_matrix);
   matrix_translate(mview_matrix, width-10.0-font_text_width(font, coords), 10.0, 0.0);
   font_text_draw(font, coords);
-
-  matrix_identity(mview_matrix);
-  matrix_translate(mview_matrix, width/2.0, height/2.0, 0.0);
-  glVertexAttrib3f(0, 0.0, 0.0, 0.0);
+  
+  glBindVertexArray(vao_points);
   glDisableVertexAttribArray(0);
+  glVertexAttrib3f(0, 0.0f, 0.0f, 0.0f);
   glUseProgram(program_points);
   glPointSize(10.0);
   glDrawArrays(GL_POINTS, 0, 1);
-
+  
   mstack_pick(mstack, proj_matrix, 1);
-
+  
   glfwSwapBuffers(window);
 }
 
@@ -229,6 +228,9 @@ int main(void)
 #ifdef DEBUG
   glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, GLFW_TRUE);
 #endif
+  glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+  glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 2);
+  glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
   GLFWwindow *window = glfwCreateWindow(800, 800, "test", NULL, NULL);
   if(!window) {
 #ifdef DEBUG
@@ -238,20 +240,20 @@ int main(void)
     return 1;
   }
   glfwMakeContextCurrent(window);
-
+  
   if(glewInit() != GLEW_OK) {
 #ifdef DEBUG
     fprintf(stderr, "[INIT ] glew failed to initialize\n");
 #endif
     return 1;
   }
-  if(!GLEW_VERSION_4_0) {
+  if(!GLEW_VERSION_3_3) {
 #ifdef DEBUG
-    fprintf(stderr, "[INIT ] context does not support OpenGL 4.0\n");
+    fprintf(stderr, "[INIT ] context does not support OpenGL >= 3.3\n");
 #endif
     return 1;
   }
-
+  
 #ifdef DEBUG_GRAPHICS
   if(GLEW_VERSION_4_3) {
     glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
@@ -266,7 +268,7 @@ int main(void)
   glfwSetMouseButtonCallback(window, click);
   glfwSetScrollCallback(window, scroll);
   glfwSetKeyCallback(window, keyboard);
-
+  
   matrix_static_init();
   mstack_push(mstack, proj_matrix);
   mstack_push(mstack, proj_matrix);
@@ -286,6 +288,7 @@ int main(void)
   font_init(font, "/usr/share/fonts/TTF/arial.ttf", 12);
 #endif
 
+  glGenVertexArrays(1, &vao_points);
   GLuint shaders[2];
   shaders[0] = load_shader("res/shader/point.vert", GL_VERTEX_SHADER);
   shaders[1] = load_shader("res/shader/point.frag", GL_FRAGMENT_SHADER);
@@ -466,7 +469,7 @@ int main(void)
     ++frame;
     usleep(ttotal > (1000000/FPS_LIM) ? 0 : (1000000/FPS_LIM) - ttotal);
   }
-
+  
   if(frame > 120) {
     fprintf(stderr, "[INIT ] exiting main loop, render max %d, physics max %d, total max %d (%d fps)\n",
 	    (int) trender_max, (int) tphysics_max, (int) ttotal_max, (int) (1000000/ttotal_max));

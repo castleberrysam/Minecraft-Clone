@@ -11,7 +11,7 @@ typedef struct Chunk {
   Block **blocks;
   Vector3i pos;
   GLuint buffer;
-  GLuint feedback;
+  GLuint num_verts;
   bool changed;
   bool empty;
 } Chunk;

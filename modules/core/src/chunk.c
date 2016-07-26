@@ -19,8 +19,9 @@ void chunk_init(Chunk *chunk, Vector3i *pos)
     shaders[0] = load_shader("res/shader/chunk_regen.vert", GL_VERTEX_SHADER);
     shaders[1] = load_shader("res/shader/chunk_regen.geom", GL_GEOMETRY_SHADER);
     program_regen = compile_program(2, shaders);
-    char *varyings[3] = {"off", "pos", "tex"};
-    glTransformFeedbackVaryings(program_regen, 3, (const GLchar * const *) varyings, GL_INTERLEAVED_ATTRIBS);
+    char *varyings[3] = {"pos", "texcoords", "tex"};
+    glTransformFeedbackVaryings(program_regen, 3, (const GLchar * const *) varyings,
+				GL_INTERLEAVED_ATTRIBS);
     glLinkProgram(program_regen);
 
     shaders[0] = load_shader("res/shader/chunk_render.vert", GL_VERTEX_SHADER);
@@ -52,14 +53,13 @@ void chunk_init(Chunk *chunk, Vector3i *pos)
   chunk->changed = true;
   chunk->empty = true;
   glGenBuffers(1, &chunk->buffer);
-  glGenTransformFeedbacks(1, &chunk->feedback);
+  chunk->num_verts = 0;
 }
 
 void chunk_delete(Chunk *chunk)
 {
   free(chunk->blocks);
   glDeleteBuffers(1, &chunk->buffer);
-  glDeleteTransformFeedbacks(1, &chunk->feedback);
 }
 
 inline Block * chunk_block_get(Chunk *chunk, Vector3i *pos)
@@ -120,25 +120,31 @@ static void chunk_regen_buffer(Chunk **adjacent)
   glGenTextures(1, &texbuf);
   glBindTexture(GL_TEXTURE_BUFFER, texbuf);
   glTexBuffer(GL_TEXTURE_BUFFER, GL_R32I, blocks);
-
+  
   glUseProgram(program_regen);
   glUniform1i(glGetUniformLocation(program_regen, "blocks"), 0);
   glBindBuffer(GL_ARRAY_BUFFER, buffer_regen);
   glBindVertexArray(vao_regen);
   glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (const GLvoid *) 0);
   glEnableVertexAttribArray(0);
-
-  glBindTransformFeedback(GL_TRANSFORM_FEEDBACK, chunk->feedback);
+  
   glBindBufferBase(GL_TRANSFORM_FEEDBACK_BUFFER, 0, chunk->buffer);
-  glBufferData(GL_TRANSFORM_FEEDBACK_BUFFER, 2048*6*6*((sizeof(GLfloat)*6)+sizeof(GLint)),
+  glBufferData(GL_TRANSFORM_FEEDBACK_BUFFER, 2048*6*6*((sizeof(GLfloat)*5)+sizeof(GLint)),
 	       NULL, GL_STATIC_COPY);
-
+  
+  GLuint query;
+  glGenQueries(1, &query);
+  glBeginQuery(GL_TRANSFORM_FEEDBACK_PRIMITIVES_WRITTEN, query);
   glEnable(GL_RASTERIZER_DISCARD);
   glBeginTransformFeedback(GL_TRIANGLES);
   glDrawArrays(GL_POINTS, 0, 4096);
   glEndTransformFeedback();
   glDisable(GL_RASTERIZER_DISCARD);
-
+  glEndQuery(GL_TRANSFORM_FEEDBACK_PRIMITIVES_WRITTEN);
+  glGetQueryObjectuiv(query, GL_QUERY_RESULT, &chunk->num_verts);
+  glDeleteQueries(1, &query);
+  chunk->num_verts *= 3;
+  
   glDeleteBuffers(1, &blocks);
   glDeleteTextures(1, &texbuf);
 
@@ -157,21 +163,21 @@ void chunk_draw(Chunk *chunk, World *world)
   glUseProgram(program_render);
   glUniform1i(glGetUniformLocation(program_render, "textures"), 0);
   glActiveTexture(GL_TEXTURE0);
-  glEnable(GL_TEXTURE_3D);
-  glBindTexture(GL_TEXTURE_CUBE_MAP_ARRAY, texture_array);
+  glBindTexture(GL_TEXTURE_2D, texture_atlas);
   matrix_update_mvp(glGetUniformLocation(program_render, "mvp"));
   glBindBuffer(GL_ARRAY_BUFFER, chunk->buffer);
   glBindVertexArray(vao_render);
-  glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, (sizeof(GLfloat)*6)+sizeof(GLint), (const GLvoid *) 0);
-  glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, (sizeof(GLfloat)*6)+sizeof(GLint),
+  glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, (sizeof(GLfloat)*5)+sizeof(GLint),
+			(const GLvoid *) 0);
+  glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, (sizeof(GLfloat)*5)+sizeof(GLint),
 			(const GLvoid *) (sizeof(GLfloat)*3));
-  glVertexAttribIPointer(2, 1, GL_INT, (sizeof(GLfloat)*6)+sizeof(GLint),
-			 (const GLvoid *) (sizeof(GLfloat)*6));
+  glVertexAttribIPointer(2, 1, GL_INT, (sizeof(GLfloat)*5)+sizeof(GLint),
+			 (const GLvoid *) (sizeof(GLfloat)*5));
   glEnableVertexAttribArray(0);
   glEnableVertexAttribArray(1);
   glEnableVertexAttribArray(2);
 
   glEnable(GL_DEPTH_TEST);
   glDepthFunc(GL_LEQUAL);
-  glDrawTransformFeedback(GL_TRIANGLES, chunk->feedback);
+  glDrawArrays(GL_TRIANGLES, 0, chunk->num_verts);
 }

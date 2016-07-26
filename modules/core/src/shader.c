@@ -58,12 +58,17 @@ GLuint compile_program(int num, GLuint *shaders)
     glCompileShader(shader);
     GLint status;
     glGetShaderiv(shader, GL_COMPILE_STATUS, &status);
-    if(status != GL_TRUE) {success = GL_FALSE;}
+    if(status != GL_TRUE) {
+#ifdef DEBUG_GRAPHICS
+      fprintf(stderr, "[SHADR] shader failed to compile\n");
+#endif
+      success = GL_FALSE;
+    }
     
 #ifdef DEBUG_GRAPHICS
     GLint info_len;
     glGetShaderiv(shader, GL_INFO_LOG_LENGTH, &info_len);
-    if(info_len == 0) {continue;}
+    if(info_len < 2) {continue;}
 
     GLint type;
     glGetShaderiv(shader, GL_SHADER_TYPE, &type);
@@ -101,9 +106,13 @@ GLuint compile_program(int num, GLuint *shaders)
   glGetProgramiv(program, GL_LINK_STATUS, &success);
   
 #ifdef DEBUG_GRAPHICS
+  if(success != GL_TRUE) {
+    fprintf(stderr, "[SHADR] program failed to link\n");
+  }
+  
   GLint info_len;
   glGetProgramiv(program, GL_INFO_LOG_LENGTH, &info_len);
-  if(info_len == 0) {goto end;}
+  if(info_len < 2) {goto end;}
 
   char *info = malloc(info_len);
   glGetProgramInfoLog(program, info_len, NULL, info);

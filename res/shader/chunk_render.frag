@@ -1,12 +1,12 @@
-#version 400 core
+#version 330 core
 
-uniform samplerCubeArray textures;
-in vec3 vs_pos;
+uniform sampler2D textures;
+in vec2 vs_texcoords;
 flat in int vs_tex;
 out vec4 color;
 
 void main(void)
 {
-  // need to convert from [0, 1] to [-1 ,1]
-  color = texture(textures, vec4((vs_pos * 2) - vec3(1.0), float(vs_tex)));
+  vec2 coord = vec2(((vs_tex%16)+vs_texcoords.x)/16.0, ((vs_tex/16)+vs_texcoords.y)/16.0);
+  color = texture(textures, coord);
 }

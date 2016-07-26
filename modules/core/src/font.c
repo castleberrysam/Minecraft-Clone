@@ -206,7 +206,6 @@ void font_text_draw(Font *font, char *text)
   glUseProgram(program);
   glUniform1i(glGetUniformLocation(program, "sampler"), 0);
   glActiveTexture(GL_TEXTURE0);
-  glEnable(GL_TEXTURE_2D);
   glBindTexture(GL_TEXTURE_2D, font->atlas);
   matrix_update_mvp(glGetUniformLocation(program, "mvp"));
   glBindVertexArray(vao);

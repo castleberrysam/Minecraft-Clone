@@ -44,6 +44,7 @@ bool module_load(Module *module)
   module->load();
   return true;
  cleanup:
+  if(module->unload != NULL) {module->unload();}
   FreeLibrary(module->library);
   return false;
 #else
@@ -64,9 +65,11 @@ bool module_load(Module *module)
   module->get_entities = dlsym(module->library, "module_get_entities");
   module->get_actions = dlsym(module->library, "module_get_actions");
   module->loaded = true;
+  module->load();
   return true;
  cleanup:
-  module_unload(module);
+  if(module->unload != NULL) {module->unload();}
+  dlclose(module->library);
   return false;
 #endif
 }

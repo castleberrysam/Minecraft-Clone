@@ -70,6 +70,25 @@ static void error(int error, const char *description)
   fprintf(stderr, "[INIT ] glfw error: %s\n", description);
 }
 
+static void loadscreen(GLFWwindow *window)
+{
+  glClearColor(0.0, 0.0, 0.0, 1.0);
+  glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
+
+  mstack_pick(mstack, proj_matrix, 0);
+  
+  int width, height;
+  glfwGetFramebufferSize(window, &width, &height);
+  matrix_identity(mview_matrix);
+  matrix_translate(mview_matrix, (width-font_text_width(font, "Loading..."))/2.0,
+		   height/2.0, 0.0);
+  font_text_draw(font, "Loading...");
+
+  mstack_pick(mstack, proj_matrix, 1);
+
+  glfwSwapBuffers(window);
+}
+
 static void display(GLFWwindow *window)
 {
   Game *game = glfwGetWindowUserPointer(window);
@@ -283,6 +302,8 @@ int main(void)
   font_init(font, "/usr/share/fonts/TTF/arial.ttf", 12);
 #endif
 
+  loadscreen(window);
+
   glGenVertexArrays(1, &vao_points);
   GLuint shaders[2];
   shaders[0] = load_shader("res/shader/point.vert", GL_VERTEX_SHADER);
@@ -324,7 +345,7 @@ int main(void)
     }
   }
 
-  sound_init(&sound_break, "res/break.ogg", 1.0, 0.5);
+  sound_init(&sound_break, "res/break.ogg", 1.0, 0.2);
 
   uint64_t frame = 0;
   while(!glfwWindowShouldClose(window)) {

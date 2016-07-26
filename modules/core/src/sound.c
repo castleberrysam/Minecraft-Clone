@@ -3,7 +3,7 @@
 
 static ALCdevice *device = NULL;
 static ALCcontext *context = NULL;
-static ALuint sources[256];
+static ALuint sources[64];
 
 static bool prepare_lib(void)
 {
@@ -18,7 +18,7 @@ static bool prepare_lib(void)
   context = alcCreateContext(device, NULL);
   alcMakeContextCurrent(context);
 
-  alGenSources(8, sources);
+  alGenSources(64, sources);
   alListenerf(AL_GAIN, 1.0);
 
   return true;
@@ -26,7 +26,7 @@ static bool prepare_lib(void)
 
 void sound_cleanup_lib(void)
 {
-  alDeleteSources(8, sources);
+  alDeleteSources(64, sources);
   alcMakeContextCurrent(NULL);
   alcDestroyContext(context);
   alcCloseDevice(device);
@@ -89,10 +89,11 @@ void sound_delete(Sound *sound)
   alDeleteBuffers(1, &sound->buffer);
 }
 
-void sound_play_static(Sound *sound, Vector3d *pos)
+static ALuint sound_source_avail(void)
 {
-  int source = -1;
-  for(int i=0;i<8;++i) {
+  ALuint source = sources[0];
+  int i = 0;
+  for(;i<64;++i) {
     ALint state;
     alGetSourcei(sources[i], AL_SOURCE_STATE, &state);
     if(state == AL_STOPPED || state == AL_INITIAL) {
@@ -100,16 +101,46 @@ void sound_play_static(Sound *sound, Vector3d *pos)
       break;
     }
   }
-  if(source == -1) {
 #ifdef DEBUG
-    fprintf(stderr, "[SOUND] max sound source limit exceeded\n");
+  if(i == 65) {fprintf(stderr, "[SOUND] max sound source limit exceeded\n");}
 #endif
-    return;
-  }
+  return source;
+}
+
+void sound_play_static(Sound *sound, Vector3d *pos)
+{
+  ALuint source = sound_source_avail();
   
   alSource3f(source, AL_POSITION, pos->x, pos->y, pos->z);
+  alSourcei(source, AL_SOURCE_RELATIVE, AL_FALSE);
   alSourcei(source, AL_BUFFER, sound->buffer);
   alSourcef(source, AL_PITCH, sound->pitch);
   alSourcef(source, AL_GAIN, sound->gain);
+
+  alSourcei(source, AL_LOOPING, AL_FALSE);
   alSourcePlay(source);
 }
+
+void sound_play_ambient(Sound *sound, bool loop)
+{
+  ALuint source = sound_source_avail();
+
+  alSource3f(source, AL_POSITION, 0.0f, 0.0f, 0.0f);
+  alSourcei(source, AL_SOURCE_RELATIVE, AL_TRUE);
+  alSourcei(source, AL_BUFFER, sound->buffer);
+  alSourcef(source, AL_PITCH, sound->pitch);
+  alSourcef(source, AL_GAIN, sound->gain);
+
+  alSourcei(source, AL_LOOPING, loop ? AL_TRUE : AL_FALSE);
+  alSourcePlay(source);
+}
+
+void sound_stop(Sound *sound)
+{
+  for(int i=0;i<64;++i) {
+    ALint buffer;
+    alGetSourcei(sources[i], AL_BUFFER, &buffer);
+    if(buffer == sound->buffer) {alSourceStop(sources[i]);}
+  }
+}
+

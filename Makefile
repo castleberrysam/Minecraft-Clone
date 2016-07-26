@@ -16,15 +16,15 @@ SRC_FILES := $(wildcard src/*.c)
 LIN_BUILD := $(patsubst src/%.c, build/linux/%.o, $(SRC_FILES))
 WIN_BUILD := $(patsubst src/%.c, build/win/%.o, $(SRC_FILES))
 OSX_BUILD := $(patsubst src/%.c, build/osx/%.o, $(SRC_FILES))
-all: core linux
-core:
-	make -C modules/core clean
-	make -C modules/core all
-linux: $(LIN_BUILD) dist
+.PHONY: mods linux win osx clean
+mods:
+	make -C modules/core $(MAKECMDGOALS)
+	$(foreach dir,$(shell find modules/ -maxdepth 1 -mindepth 1 ! -path modules/core),make -C $(dir) $(MAKECMDGOALS);)
+linux: mods $(LIN_BUILD) dist
 	$(LIN_CC) -o dist/linux/$(LIN_BIN) ${LIN_BUILD} -Llib/linux/ -Lmodules/core/dist/linux/ $(LIN_LIBS)
-win: $(WIN_BUILD) dist
+win: mods $(WIN_BUILD) dist
 	$(WIN_CC) -o dist/win/$(WIN_BIN) $(WIN_BUILD) -Llib/win/ -Lmodules/core/dist/win/ $(WIN_LIBS)
-osx: $(OSX_BUILD) dist
+osx: mods $(OSX_BUILD) dist
 	$(OSX_CC) -o dist/osx/$(OSX_BIN) $(OSX_BUILD) -Llib/osx/ -Lmodules/core/dist/osx/ $(OSX_LIBS)
 build/linux/%.o: src/%.c build
 	$(LIN_CC) -c $(LIN_FLAGS) $(ALL_FLAGS) -o $@ $< -Iinclude/linux/ -Imodules/core/src/
@@ -43,6 +43,6 @@ dist:
 	cp -r res/ dist/win/res/
 	mkdir -p dist/osx/
 	cp -r res/ dist/osx/res/
-clean:
+clean: mods
 	-rm -rf build/
 	-rm -rf dist/

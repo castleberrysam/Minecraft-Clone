@@ -20,7 +20,7 @@ SRC_FILES := $(wildcard src/*.c)
 LIN_BUILD := $(patsubst src/%.c, build/linux/%.o, $(SRC_FILES))
 WIN_BUILD := $(patsubst src/%.c, build/win/%.o, $(SRC_FILES))
 OSX_BUILD := $(patsubst src/%.c, build/osx/%.o, $(SRC_FILES))
-all: linux
+.PHONY: linux win osx clean
 linux: $(LIN_BUILD) dist
 	$(LIN_CC) $(LIN_LINK) $(ALL_LINK) -o dist/linux/$(LIN_BIN) ${LIN_BUILD} -Llib/linux/ -L../../lib/linux/ -L../core/dist/linux/ $(LIN_LIBS)
 win: $(WIN_BUILD) dist
@@ -39,11 +39,8 @@ build:
 	mkdir -p build/osx/
 dist:
 	mkdir -p dist/linux/
-	cp -r res/ dist/linux/res/
 	mkdir -p dist/win/
-	cp -r res/ dist/win/res/
 	mkdir -p dist/osx/
-	cp -r res/ dist/osx/res/
 clean:
 	-rm -rf build/
 	-rm -rf dist/
